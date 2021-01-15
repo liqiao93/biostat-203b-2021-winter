@@ -42,6 +42,9 @@ sessionInfo()
 
 1. This exercise (and later in this course) uses the [MIMIC-IV data](https://mimic-iv.mit.edu), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <https://mimic-iv.mit.edu/docs/access/> to (1) complete the CITI `Data or Specimens Only Research` course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)
 
+
+**Solution**:Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) Here is my [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745)
+
 2. The `/usr/203b-data/mimic-iv/` folder on teaching server contains data sets from MIMIC-IV. Refer to <https://mimic-iv.mit.edu/docs/datasets/> for details of data files.  
     ```{bash}
     ls -l /usr/203b-data/mimic-iv
@@ -96,3 +99,12 @@ Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this sh
 ### Q4. More fun with Linux
 
 Try these commands in Bash and interpret the results: `cal`, `cal 2021`, `cal 9 1752` (anything unusual?), `date`, `hostname`, `arch`, `uname -a`, `uptime`, `who am i`, `who`, `w`, `id`, `last | head`, `echo {con,pre}{sent,fer}{s,ed}`, `time sleep 5`, `history | tail`.
+
+**Solution**: `cal` displays the calendar of current month:
+```{bash}
+cal
+```
+`cal 2021` displays the calendar of 2021:
+```{bash}
+cal 2021
+```
