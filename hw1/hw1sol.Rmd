@@ -43,7 +43,7 @@ sessionInfo()
 1. This exercise (and later in this course) uses the [MIMIC-IV data](https://mimic-iv.mit.edu), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <https://mimic-iv.mit.edu/docs/access/> to (1) complete the CITI `Data or Specimens Only Research` course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)
 
 
-**Solution**:Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) Here is my [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745)
+**Solution**: Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) and [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745).
 
 2. The `/usr/203b-data/mimic-iv/` folder on teaching server contains data sets from MIMIC-IV. Refer to <https://mimic-iv.mit.edu/docs/datasets/> for details of data files.  
     ```{bash}
@@ -107,4 +107,60 @@ cal
 `cal 2021` displays the calendar of 2021:
 ```{bash}
 cal 2021
+```
+`cal 9 1752` displays the calendar of September in 1752:
+```{bash}
+cal 9 1752
+```
+`date` displays the current day of the week, date, and time:
+```{bash}
+date
+```
+`hostname` displays the name of the current teaching server:
+```{bash}
+hostname
+```
+`arch` displays the current instruction set architecture and system version:
+```{bash}
+arch
+```
+`uname -a` displays Linux system information:
+```{bash}
+uname -a
+```
+`uptime` displays how long the system has been running and load:
+```{bash}
+uptime
+```
+`who am i` displays who you are logged in as:
+```{bash}
+whoami
+```
+`who` displays who is logged into the system:
+```{bash}
+who
+```
+`w` displays who is online:
+```{bash}
+w
+```
+`id` displays the user and group ids of your current user：
+```{bash}
+id
+```
+`last | head` displays the first 10 lines of the last users who have logged onto the system:
+```{bash}
+last | head
+```
+`echo {con,pre}{sent,fer}{s,ed}` displays all possible combinations of characters from three groups: 
+```{bash}
+echo {con,pre}{sent,fer}{s,ed}
+```
+`time sleep 5` displays the time taken to pause the script for 5 seconds:
+```{bash}
+time sleep 5
+```
+`history | tail` displays the last 10 previously executed command:
+```{bash}
+history | tail  
 ```
