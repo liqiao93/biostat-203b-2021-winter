@@ -438,10 +438,35 @@ summary {
 <li><p>You and your friend just have finished reading <em>Pride and Prejudice</em> by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <a href="http://www.gutenberg.org/cache/epub/42671/pg42671.txt" class="uri">http://www.gutenberg.org/cache/epub/42671/pg42671.txt</a> and save to your local folder.</p>
 <pre class="bash"><code>curl http://www.gutenberg.org/cache/epub/42671/pg42671.txt &gt; pride_and_prejudice.txt</code></pre>
 <p>Do <strong>not</strong> put this text file <code>pride_and_prejudice.txt</code> in Git. Using a <code>for</code> loop, how would you tabulate the number of times each of the four characters is mentioned?</p></li>
+</ol>
+<p><strong>Solution</strong>:</p>
+<pre><code>```bash
+for name in &#39;Elizabeth&#39; &#39;Jane&#39; &#39;Lydia&#39; &#39;Darcy&#39;
+  do
+  echo $name
+  grep -o $name pride_and_prejudice.txt | wc -l
+  
+done
+```
+
+```
+## Elizabeth
+## 634
+## Jane
+## 294
+## Lydia
+## 170
+## Darcy
+## 417
+```</code></pre>
+<ol start="2" style="list-style-type: decimal">
 <li><p>What’s the difference between the following two commands?</p>
 <pre class="bash"><code>echo &#39;hello, world&#39; &gt; test1.txt</code></pre>
 <p>and</p>
 <pre class="bash"><code>echo &#39;hello, world&#39; &gt;&gt; test2.txt</code></pre></li>
+</ol>
+<p><strong>Solution</strong>: The first command directs output to display “hello, world” in the file test1.txt and overwrite previously existing scripts already in test1.txt; The second command appends output to test2.txt, so “hello, world” will be added to test2.txt without deleting the previously existing scripts, if any.</p>
+<ol start="3" style="list-style-type: decimal">
 <li><p>Using your favorite text editor (e.g., <code>vi</code>), type the following and save the file as <code>middle.sh</code>:</p>
 <pre class="bash"><code>#!/bin/sh
 # Select lines from the middle of a file.
@@ -451,6 +476,10 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5</code></pre>
 <p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p></li>
 </ol>
+<p><strong>Solution</strong>:</p>
+<pre class="bash"><code>vi middle.sh
+./middle.sh pride_and_prejudice.txt 20 5</code></pre>
+<p>The first line of the shell script is to invoke vi editor.</p>
 <div id="q4.-more-fun-with-linux" class="section level3">
 <h3>Q4. More fun with Linux</h3>
 <p>Try these commands in Bash and interpret the results: <code>cal</code>, <code>cal 2021</code>, <code>cal 9 1752</code> (anything unusual?), <code>date</code>, <code>hostname</code>, <code>arch</code>, <code>uname -a</code>, <code>uptime</code>, <code>who am i</code>, <code>who</code>, <code>w</code>, <code>id</code>, <code>last | head</code>, <code>echo {con,pre}{sent,fer}{s,ed}</code>, <code>time sleep 5</code>, <code>history | tail</code>.</p>
@@ -509,7 +538,7 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 ## 24 25 26 27 28 29 30</code></pre>
 <p><code>date</code> displays the current day of the week, date, and time:</p>
 <pre class="bash"><code>date</code></pre>
-<pre><code>## Mon Jan 18 22:02:36 UTC 2021</code></pre>
+<pre><code>## Tue Jan 19 07:09:10 UTC 2021</code></pre>
 <p><code>hostname</code> displays the name of the current teaching server:</p>
 <pre class="bash"><code>hostname</code></pre>
 <pre><code>## ucla-biostat-203b</code></pre>
@@ -521,48 +550,44 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre><code>## Linux ucla-biostat-203b 3.10.0-1160.6.1.el7.x86_64 #1 SMP Tue Nov 17 13:59:11 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux</code></pre>
 <p><code>uptime</code> displays how long the system has been running and load:</p>
 <pre class="bash"><code>uptime</code></pre>
-<pre><code>##  22:02:36 up 15 days, 13 min,  3 users,  load average: 0.08, 0.05, 0.05</code></pre>
+<pre><code>##  07:09:10 up 15 days,  9:20,  1 user,  load average: 0.10, 0.09, 0.08</code></pre>
 <p><code>who am i</code> displays who you are logged in as:</p>
 <pre class="bash"><code>whoami</code></pre>
 <pre><code>## liqiao93</code></pre>
 <p><code>who</code> displays who is logged into the system:</p>
 <pre class="bash"><code>who</code></pre>
-<pre><code>## ionahu08 pts/1        2021-01-18 19:40 (110.3.236.35.bc.googleusercontent.com)
-## ionahu08 pts/5        2021-01-18 19:15 (cpe-23-243-156-211.socal.res.rr.com)
-## ionahu08 pts/6        2021-01-18 19:16 (110.3.236.35.bc.googleusercontent.com)</code></pre>
+<pre><code>## germc3   pts/0        2021-01-19 06:53 (149.142.80.37)</code></pre>
 <p><code>w</code> displays who is online:</p>
 <pre class="bash"><code>w</code></pre>
-<pre><code>##  22:02:36 up 15 days, 13 min,  3 users,  load average: 0.08, 0.05, 0.05
+<pre><code>##  07:09:10 up 15 days,  9:20,  1 user,  load average: 0.10, 0.09, 0.08
 ## USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
-## ionahu08 pts/1    110.3.236.35.bc. 19:40    2:20m  0.03s  0.03s -bash
-## ionahu08 pts/5    cpe-23-243-156-2 19:15    2:20m  0.27s  0.23s ssh ionahu08@server.ucla-biostat-203b.com
-## ionahu08 pts/6    110.3.236.35.bc. 19:16    2:20m  0.13s  0.03s ssh ionahu08@server.ucla-biostat-203b.com</code></pre>
+## germc3   pts/0    149.142.80.37    06:53    2:14   0.03s  0.03s -bash</code></pre>
 <p><code>id</code> displays the user and group ids of your current user：</p>
 <pre class="bash"><code>id</code></pre>
 <pre><code>## uid=1019(liqiao93) gid=1021(liqiao93) groups=1021(liqiao93) context=system_u:system_r:initrc_t:s0</code></pre>
 <p><code>last | head</code> displays the first 10 lines of the last users who have logged onto the system:</p>
 <pre class="bash"><code>last | head</code></pre>
-<pre><code>## filipovi pts/7        ip70-181-107-212 Mon Jan 18 21:19 - 21:22  (00:02)    
-## jihcai   pts/9        ip68-6-101-100.s Mon Jan 18 20:48 - 20:49  (00:00)    
-## filipovi pts/7        ip70-181-107-212 Mon Jan 18 20:35 - 20:53  (00:18)    
-## hunanzho pts/9        47.145.202.194   Mon Jan 18 19:54 - 20:14  (00:20)    
-## lhashemi pts/12       cpe-23-242-240-4 Mon Jan 18 19:53 - 20:31  (00:38)    
-## lhashemi pts/12       cpe-23-242-240-4 Mon Jan 18 19:44 - 19:51  (00:06)    
-## ionahu08 pts/1        110.3.236.35.bc. Mon Jan 18 19:40   still logged in   
-## jihcai   pts/10       ip68-6-101-100.s Mon Jan 18 19:28 - 20:40  (01:12)    
-## zianzhua pts/9        110.88.97.219    Mon Jan 18 19:27 - 19:54  (00:26)    
-## lhashemi pts/1        cpe-23-242-240-4 Mon Jan 18 19:26 - 19:32  (00:05)</code></pre>
+<pre><code>## germc3   pts/0        149.142.80.37    Tue Jan 19 06:53   still logged in   
+## huazhou  pts/6        108-64-58-205.li Tue Jan 19 05:48 - 07:06  (01:18)    
+## kmli     pts/1        ip68-110-213-196 Tue Jan 19 03:03 - 03:27  (00:24)    
+## kmli     pts/1        ip68-110-213-196 Tue Jan 19 02:59 - 03:02  (00:02)    
+## lhashemi pts/0        cpe-23-242-240-4 Tue Jan 19 02:58 - 05:53  (02:54)    
+## ajedward pts/0        cpe-98-149-10-21 Tue Jan 19 00:26 - 02:27  (02:01)    
+## lhashemi pts/8        cpe-23-242-240-4 Mon Jan 18 23:16 - 01:19  (02:02)    
+## linyuzho pts/7        s-169-232-70-224 Mon Jan 18 23:10 - 01:10  (02:00)    
+## filipovi pts/7        ip70-181-107-212 Mon Jan 18 21:19 - 21:22  (00:02)    
+## jihcai   pts/9        ip68-6-101-100.s Mon Jan 18 20:48 - 20:49  (00:00)</code></pre>
 <p><code>echo {con,pre}{sent,fer}{s,ed}</code> displays all possible combinations of characters from three groups:</p>
 <pre class="bash"><code>echo {con,pre}{sent,fer}{s,ed}</code></pre>
 <pre><code>## consents consented confers confered presents presented prefers prefered</code></pre>
 <p><code>time sleep 5</code> displays the time taken to pause the script for 5 seconds:</p>
 <pre class="bash"><code>time sleep 5</code></pre>
 <pre><code>## 
-## real 0m5.002s
-## user 0m0.001s
-## sys  0m0.001s</code></pre>
+## real 0m5.003s
+## user 0m0.002s
+## sys  0m0.000s</code></pre>
 <p><code>history | tail</code> displays the last 10 previously executed command:</p>
-<pre class="bash"><code>history | tail  </code></pre>
+<pre class="bash"><code>history | tail</code></pre>
 </div>
 </div>
 

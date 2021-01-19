@@ -42,7 +42,6 @@ sessionInfo()
 
 1. This exercise (and later in this course) uses the [MIMIC-IV data](https://mimic-iv.mit.edu), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <https://mimic-iv.mit.edu/docs/access/> to (1) complete the CITI `Data or Specimens Only Research` course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)
 
-
 **Solution**: Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) and [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745).
 
 2. The `/usr/203b-data/mimic-iv/` folder on teaching server contains data sets from MIMIC-IV. Refer to <https://mimic-iv.mit.edu/docs/datasets/> for details of data files.  
@@ -74,6 +73,16 @@ Display the number of lines in each data file using a similar loop.
     ```
 Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` loop, how would you tabulate the number of times each of the four characters is mentioned?
 
+**Solution**:
+    ```{bash}
+    for name in 'Elizabeth' 'Jane' 'Lydia' 'Darcy'
+      do
+      echo $name
+      grep -o $name pride_and_prejudice.txt | wc -l
+      
+    done
+    ```
+
 2. What's the difference between the following two commands?
     ```{bash eval=FALSE}
     echo 'hello, world' > test1.txt
@@ -82,6 +91,8 @@ Do **not** put this text file `pride_and_prejudice.txt` in Git. Using a `for` lo
     ```{bash eval=FALSE}
     echo 'hello, world' >> test2.txt
     ```
+
+**Solution**: The first command directs output to display "hello, world" in the file test1.txt and overwrite previously existing scripts already in test1.txt; The second command appends output to test2.txt, so "hello, world" will be added to test2.txt without deleting the previously existing scripts, if any.
 
 3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
     ```{bash eval=FALSE}
@@ -95,6 +106,16 @@ Using `chmod` make the file executable by the owner, and run
     ./middle.sh pride_and_prejudice.txt 20 5
     ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
+
+**Solution**:
+```{bash, eval=FALSE}
+vi middle.sh
+./middle.sh pride_and_prejudice.txt 20 5
+```
+
+
+
+The first line of the shell script is to invoke vi editor. 
 
 ### Q4. More fun with Linux
 
@@ -162,5 +183,5 @@ time sleep 5
 ```
 `history | tail` displays the last 10 previously executed command:
 ```{bash}
-history | tail  
+history | tail
 ```
