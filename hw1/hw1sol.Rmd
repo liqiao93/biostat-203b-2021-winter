@@ -107,15 +107,19 @@ Using `chmod` make the file executable by the owner, and run
     ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
-**Solution**:
+**Solution**: I use commands `touch middle.sh` and `vi middle.sh` to create the 'middle.sh' file. Then I use `chmod`make the file executable by the owner and run the commands below   
+
 ```{bash, eval=FALSE}
-vi middle.sh
+chmod u+x middle.sh 
 ./middle.sh pride_and_prejudice.txt 20 5
 ```
 
+The output displays lines 15-20 of the Pride and Prejudice.txt file. A same output can be obtained by running the commands below: 
+```{bash, eval=FALSE}
+head -n 20 pride_and_prejudice.txt | tail -n 5
+```
 
-
-The first line of the shell script is to invoke vi editor. 
+Thus, `"$1"` in the shell scripts represents the file name, `"$2"` represents the number of lines from the top of the text file, and `"3"` represents the number of lines from the bottom to be displayed. The first lineof the shell scripts tells the system to use the share `/bin/sh` to run these commands.
 
 ### Q4. More fun with Linux
 
@@ -133,7 +137,7 @@ cal 2021
 ```{bash}
 cal 9 1752
 ```
-`date` displays the current day of the week, date, and time:
+`date` displays the current date and time of the system:
 ```{bash}
 date
 ```
@@ -183,5 +187,7 @@ time sleep 5
 ```
 `history | tail` displays the last 10 previously executed command:
 ```{bash}
+set -o history
+echo "hello"
 history | tail
 ```
