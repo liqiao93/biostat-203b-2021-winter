@@ -54,6 +54,25 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
 
 3. Display the contents in the folders `core`, `hosp`, `icu`. What are the functionalities of the bash commands `zcat`, `zless`, `zmore`, and `zgrep`? 
 
+**Solution**: 
+    ```{bash}
+   ls -l /usr/203b-data/mimic-iv/core
+    ```
+
+    ```{bash}
+   ls -l /usr/203b-data/mimic-iv/hosp
+    ```
+
+    ```{bash}
+   ls -l /usr/203b-data/mimic-iv/icu
+    ```
+    
+Here are the functionalities of the bash commands:
+`zcat`: view the contents of a compressed file (i.e., gz file)
+`zless`: view a compressed file one page at a time, scroll upwards and downwards through the input
+`zmore`: view a gz file one page at a time (only downwards)
+`zgrep`: search out expressions from a given compressed gz file
+
 4. What's the output of following bash script?
     ```{bash, eval=F}
     for datafile in /usr/203b-data/mimic-iv/core/*.gz
@@ -63,8 +82,129 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
     ```
 Display the number of lines in each data file using a similar loop.
 
-4. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
+**Solution**: 
+The output of the bash script above is the list of detailed contents of the directory `/usr/203b-data/mimic-iv/core/`.
 
+Below are the number of lines in each data file in folder `core`:
+    ```{bash, eval=F}
+    for datafile in /usr/203b-data/mimic-iv/core/*.gz
+      do
+        wc -l $datafile
+      done
+    ```
+Below are the number of lines in each data file in folder `hosp`:
+    ```{bash, eval=F}
+    for datafile in /usr/203b-data/mimic-iv/hosp/*.gz
+      do
+        wc -l $datafile
+      done
+    ```
+
+Below are the numbers of lines in each data file in folder `icu`:
+    ```{bash, eval=F}
+    for datafile in /usr/203b-data/mimic-iv/icu/*.gz
+      do
+        wc -l $datafile
+      done
+    ```
+
+5. Display the first few lines of `admissions.csv.gz`. How many rows are in this data file? How many unique patients (identified by `subject_id`) are in this data file? What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, `language`, `marital_status`, and `ethnicity`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq`, `wc`, and so on.)
+
+**Solution**: 
+
+The first 10 lines of `admissions.csv.gz`:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |head -10
+    ```
+
+The number of rows in `admissions.csv.gz`is 524521:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz | awk 'END { print NR}'
+    ```
+
+The number of unique patients in this data file is 257366:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $1 }'|
+    tail -n +2 | sort | uniq | wc -l
+
+    ```
+
+**The possible values taken by each variable are listed below:**
+
+admission_type:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $6 }'|
+    tail -n +2 | sort | uniq
+    ```
+    
+admission_location:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $7 }'|
+    tail -n +2 | sort | uniq
+    ```
+
+insurance:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $9 }'|
+    tail -n +2 | sort | uniq
+    ```
+
+language:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $10 }'|
+    tail -n +2 | sort | uniq
+    ```
+
+marital_status:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $11 }'|
+    tail -n +2 | sort | uniq
+    ```
+
+ethnicity:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $12 }'|
+    tail -n +2 | sort | uniq
+    ```
+
+
+**The count for each unque value of these variables are listed below:**
+
+The number of each unique value of `admission_type`is 9:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $6 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
+
+The number of each unique value of `admission_location`is 12:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $7 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
+
+The number of each unique value of `insurance`is 3:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $9 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
+
+The number of each unique value of `language`is 2:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $10 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
+    
+The number of each unique value of `marital_status`is 5:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $11 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
+
+The number of each unique value of `ethnicity`is 8:
+    ```{bash}
+    zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $12 }'|
+    tail -n +2 | sort | uniq | wc -l
+    ```
 ## Q3. Who's popular in Price and Prejudice
 
 1. You and your friend just have finished reading *Pride and Prejudice* by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <http://www.gutenberg.org/cache/epub/42671/pg42671.txt> and save to your local folder. 
