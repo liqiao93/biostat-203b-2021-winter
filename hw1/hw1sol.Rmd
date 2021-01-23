@@ -42,7 +42,8 @@ sessionInfo()
 
 1. This exercise (and later in this course) uses the [MIMIC-IV data](https://mimic-iv.mit.edu), a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <https://mimic-iv.mit.edu/docs/access/> to (1) complete the CITI `Data or Specimens Only Research` course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)
 
-**Solution**: Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) and [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745).
+**Solution**: (1) Here is my [course completion report](https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745) and [course completion certificate](https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745).
+(2) I have submitted the application for the PhysioNet credentialing on Jan 13, 2021, but have not obtained access yet.
 
 2. The `/usr/203b-data/mimic-iv/` folder on teaching server contains data sets from MIMIC-IV. Refer to <https://mimic-iv.mit.edu/docs/datasets/> for details of data files.  
     ```{bash}
@@ -205,6 +206,7 @@ The number of each unique value of `ethnicity`is 8:
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $12 }'|
     tail -n +2 | sort | uniq | wc -l
     ```
+
 ## Q3. Who's popular in Price and Prejudice
 
 1. You and your friend just have finished reading *Pride and Prejudice* by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <http://www.gutenberg.org/cache/epub/42671/pg42671.txt> and save to your local folder. 
@@ -247,7 +249,7 @@ Using `chmod` make the file executable by the owner, and run
     ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
 
-**Solution**: I use commands `touch middle.sh` and `vi middle.sh` to create the 'middle.sh' file. Then I use `chmod`make the file executable by the owner and run the commands below   
+**Solution**: I use commands `touch middle.sh` and `vi middle.sh` to create the 'middle.sh' file. Then I use `chmod`make the file executable by the owner and run the commands below:   
 
 ```{bash, eval=FALSE}
 chmod u+x middle.sh 
