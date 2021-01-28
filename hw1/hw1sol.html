@@ -410,7 +410,7 @@ summary {
 <ol style="list-style-type: decimal">
 <li>This exercise (and later in this course) uses the <a href="https://mimic-iv.mit.edu">MIMIC-IV data</a>, a freely accessible critical care database developed by the MIT Lab for Computational Physiology. Follow the instructions at <a href="https://mimic-iv.mit.edu/docs/access/" class="uri">https://mimic-iv.mit.edu/docs/access/</a> to (1) complete the CITI <code>Data or Specimens Only Research</code> course and (2) obtain the PhysioNet credential for using the MIMIC-IV data. Display the verification links to your completion report and completion certificate here. (Hint: The CITI training takes a couple hours and the PhysioNet credentialing takes a couple days; do not leave it to the last minute.)</li>
 </ol>
-<p><strong>Solution</strong>: Here is my <a href="https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745">course completion report</a> and <a href="https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745">course completion certificate</a>.</p>
+<p><strong>Solution</strong>: (1) Here is my <a href="https://www.citiprogram.org/verify/?ka7f91ad8-1de0-400a-b550-c7f2b8169102-40353745">course completion report</a> and <a href="https://www.citiprogram.org/verify/?wfcbbdf07-618a-4efa-9d7d-81e9d2bda5ab-40353745">course completion certificate</a>. (2) I have submitted the application for the PhysioNet credentialing on Jan 13, 2021, but have not obtained access yet.</p>
 <ol start="2" style="list-style-type: decimal">
 <li><p>The <code>/usr/203b-data/mimic-iv/</code> folder on teaching server contains data sets from MIMIC-IV. Refer to <a href="https://mimic-iv.mit.edu/docs/datasets/" class="uri">https://mimic-iv.mit.edu/docs/datasets/</a> for details of data files.</p>
 <pre class="bash"><code>ls -l /usr/203b-data/mimic-iv</code></pre>
@@ -486,9 +486,24 @@ summary {
   done</code></pre>
 <p>Display the number of lines in each data file using a similar loop.</p></li>
 </ol>
-<p><strong>Solution</strong>: Below are the bash commands and number of lines in each file:</p>
+<p><strong>Solution</strong>: The output of the bash script above is the list of detailed contents of the directory <code>/usr/203b-data/mimic-iv/core/</code>.</p>
+<p>Below are the number of lines in each data file in folder <code>core</code>:</p>
 <pre><code>```bash
 for datafile in /usr/203b-data/mimic-iv/core/*.gz
+  do
+    wc -l $datafile
+  done
+```</code></pre>
+<p>Below are the number of lines in each data file in folder <code>hosp</code>:</p>
+<pre><code>```bash
+for datafile in /usr/203b-data/mimic-iv/hosp/*.gz
+  do
+    wc -l $datafile
+  done
+```</code></pre>
+<p>Below are the numbers of lines in each data file in folder <code>icu</code>:</p>
+<pre><code>```bash
+for datafile in /usr/203b-data/mimic-iv/icu/*.gz
   do
     wc -l $datafile
   done
@@ -720,7 +735,7 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre class="bash"><code>./middle.sh pride_and_prejudice.txt 20 5</code></pre>
 <p>Explain the output. Explain the meaning of <code>&quot;$1&quot;</code>, <code>&quot;$2&quot;</code>, and <code>&quot;$3&quot;</code> in this shell script. Why do we need the first line of the shell script?</p></li>
 </ol>
-<p><strong>Solution</strong>: I use commands <code>touch middle.sh</code> and <code>vi middle.sh</code> to create the ‘middle.sh’ file. Then I use <code>chmod</code>make the file executable by the owner and run the commands below</p>
+<p><strong>Solution</strong>: I use commands <code>touch middle.sh</code> and <code>vi middle.sh</code> to create the ‘middle.sh’ file. Then I use <code>chmod</code>make the file executable by the owner and run the commands below:</p>
 <pre class="bash"><code>chmod u+x middle.sh 
 ./middle.sh pride_and_prejudice.txt 20 5</code></pre>
 <p>The output displays lines 15-20 of the Pride and Prejudice.txt file. A same output can be obtained by running the commands below:</p>
@@ -784,7 +799,7 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 ## 24 25 26 27 28 29 30</code></pre>
 <p><code>date</code> displays the current date and time of the system:</p>
 <pre class="bash"><code>date</code></pre>
-<pre><code>## Fri Jan 22 04:52:52 UTC 2021</code></pre>
+<pre><code>## Sat Jan 23 03:06:01 UTC 2021</code></pre>
 <p><code>hostname</code> displays the name of the current teaching server:</p>
 <pre class="bash"><code>hostname</code></pre>
 <pre><code>## ucla-biostat-203b</code></pre>
@@ -796,39 +811,37 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre><code>## Linux ucla-biostat-203b 3.10.0-1160.6.1.el7.x86_64 #1 SMP Tue Nov 17 13:59:11 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux</code></pre>
 <p><code>uptime</code> displays how long the system has been running and load:</p>
 <pre class="bash"><code>uptime</code></pre>
-<pre><code>##  04:52:52 up 18 days,  7:03,  4 users,  load average: 1.03, 0.36, 0.22</code></pre>
+<pre><code>##  03:06:01 up 19 days,  5:16,  3 users,  load average: 0.80, 0.33, 0.27</code></pre>
 <p><code>who am i</code> displays who you are logged in as:</p>
 <pre class="bash"><code>whoami</code></pre>
 <pre><code>## liqiao93</code></pre>
 <p><code>who</code> displays who is logged into the system:</p>
 <pre class="bash"><code>who</code></pre>
-<pre><code>## angelicaruiz pts/0        2021-01-22 02:47 (cpe-108-185-43-213.socal.res.rr.com)
-## angelicaruiz pts/4        2021-01-22 04:48 (ucla-biostat-203b.c.biostat-203b-2021winter.internal)
-## ajedward pts/5        2021-01-22 04:16 (cpe-98-149-10-219.natmtn.res.rr.com)
-## filipovicmilan271 pts/7        2021-01-21 06:03 (110.3.236.35.bc.googleusercontent.com)</code></pre>
+<pre><code>## filipovicmilan271 pts/7        2021-01-21 06:03 (110.3.236.35.bc.googleusercontent.com)
+## liqiao93 pts/8        2021-01-23 02:24 (cpe-75-82-206-158.socal.res.rr.com)
+## tibbe1td pts/12       2021-01-23 02:36 (047-026-247-123.res.spectrum.com)</code></pre>
 <p><code>w</code> displays who is online:</p>
 <pre class="bash"><code>w</code></pre>
-<pre><code>##  04:52:52 up 18 days,  7:03,  4 users,  load average: 1.03, 0.36, 0.22
+<pre><code>##  03:06:01 up 19 days,  5:16,  3 users,  load average: 0.80, 0.33, 0.27
 ## USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
-## angelica pts/0    cpe-108-185-43-2 02:47   52.00s  0.16s  0.06s ssh angelicaruiz@ucla-biostat-203b
-## angelica pts/4    ucla-biostat-203 04:48   52.00s  0.04s  0.04s -bash
-## ajedward pts/5    cpe-98-149-10-21 04:16    3:56   0.07s  0.07s -bash
-## filipovi pts/7    110.3.236.35.bc. Thu06   22:43m  0.06s  0.06s -bash</code></pre>
+## filipovi pts/7    110.3.236.35.bc. Thu06   44:56m  0.06s  0.06s -bash
+## liqiao93 pts/8    cpe-75-82-206-15 02:24    4:41   0.07s  0.07s -bash
+## tibbe1td pts/12   047-026-247-123. 02:36    1.00s  0.07s  0.07s -bash</code></pre>
 <p><code>id</code> displays the user and group ids of your current user：</p>
 <pre class="bash"><code>id</code></pre>
 <pre><code>## uid=1019(liqiao93) gid=1021(liqiao93) groups=1021(liqiao93) context=system_u:system_r:initrc_t:s0</code></pre>
 <p><code>last | head</code> displays the first 10 lines of the last users who have logged onto the system:</p>
 <pre class="bash"><code>last | head</code></pre>
-<pre><code>## angelica pts/4        ucla-biostat-203 Fri Jan 22 04:48   still logged in   
-## ajedward pts/5        cpe-98-149-10-21 Fri Jan 22 04:16   still logged in   
-## angelica pts/0        cpe-108-185-43-2 Fri Jan 22 02:47   still logged in   
-## wzdbruin pts/0        112.32.10.108    Fri Jan 22 01:53 - 02:24  (00:30)    
-## wzdbruin pts/5        112.32.10.108    Fri Jan 22 01:31 - 01:56  (00:25)    
-## alvinw   pts/21       cpe-172-112-186- Fri Jan 22 01:14 - 02:26  (01:11)    
-## wzdbruin pts/19       112.32.10.108    Fri Jan 22 01:09 - 01:30  (00:21)    
-## wzdbruin pts/5        112.32.10.108    Fri Jan 22 00:56 - 01:26  (00:30)    
-## zianzhua pts/5        110.88.97.219    Fri Jan 22 00:52 - 00:53  (00:00)    
-## elviscui pts/15       115.206.116.237  Fri Jan 22 00:51 - 01:31  (00:40)</code></pre>
+<pre><code>## tibbe1td pts/12       047-026-247-123. Sat Jan 23 02:36   still logged in   
+## liqiao93 pts/8        cpe-75-82-206-15 Sat Jan 23 02:24   still logged in   
+## tibbe1td pts/8        047-026-247-123. Sat Jan 23 02:14 - 02:24  (00:09)    
+## linyuzho pts/9        s-169-232-70-224 Sat Jan 23 01:16 - 01:27  (00:10)    
+## kgfeng   pts/9        108-195-118-159. Sat Jan 23 00:04 - 00:12  (00:07)    
+## valentin pts/0        47.156.178.126   Fri Jan 22 22:05 - 00:34  (02:29)    
+## OLIVIAGO pts/1        108-64-213-148.l Fri Jan 22 21:43 - 22:34  (00:50)    
+## tibbe1td pts/5        047-026-247-123. Fri Jan 22 21:15 - 23:52  (02:36)    
+## jyixzhou pts/12       cpe84948c862443- Fri Jan 22 20:56 - 23:08  (02:11)    
+## jtan.sme pts/10       cpe-172-115-102- Fri Jan 22 20:37 - 21:50  (01:12)</code></pre>
 <p><code>echo {con,pre}{sent,fer}{s,ed}</code> displays all possible combinations of characters from three groups:</p>
 <pre class="bash"><code>echo {con,pre}{sent,fer}{s,ed}</code></pre>
 <pre><code>## consents consented confers confered presents presented prefers prefered</code></pre>
@@ -836,8 +849,8 @@ head -n &quot;$2&quot; &quot;$1&quot; | tail -n &quot;$3&quot;</code></pre>
 <pre class="bash"><code>time sleep 5</code></pre>
 <pre><code>## 
 ## real 0m5.002s
-## user 0m0.002s
-## sys  0m0.001s</code></pre>
+## user 0m0.000s
+## sys  0m0.002s</code></pre>
 <p><code>history | tail</code> displays the last 10 previously executed command:</p>
 <pre class="bash"><code>set -o history
 echo &quot;hello&quot;

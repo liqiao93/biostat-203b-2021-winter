@@ -57,15 +57,15 @@ Please, do **not** put these data files into Git; they are big. Do **not** copy 
 
 **Solution**: 
     ```{bash}
-   ls -l /usr/203b-data/mimic-iv/core
+   zcat /usr/203b-data/mimic-iv/core | ls -l
     ```
 
     ```{bash}
-   ls -l /usr/203b-data/mimic-iv/hosp
+   zcat /usr/203b-data/mimic-iv/hosp | ls -l
     ```
 
     ```{bash}
-   ls -l /usr/203b-data/mimic-iv/icu
+   zcat /usr/203b-data/mimic-iv/icu |ls -l 
     ```
     
 Here are the functionalities of the bash commands:
@@ -171,40 +171,40 @@ ethnicity:
 
 **The count for each unque value of these variables are listed below:**
 
-The number of each unique value of `admission_type`is 9:
+The number of each unique value of `admission_type`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $6 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
 
-The number of each unique value of `admission_location`is 12:
+The number of each unique value of `admission_location`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $7 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
 
-The number of each unique value of `insurance`is 3:
+The number of each unique value of `insurance`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $9 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
 
-The number of each unique value of `language`is 2:
+The number of each unique value of `language`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $10 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
     
-The number of each unique value of `marital_status`is 5:
+The number of each unique value of `marital_status`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $11 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
 
-The number of each unique value of `ethnicity`is 8:
+The number of each unique value of `ethnicity`:
     ```{bash}
     zcat /usr/203b-data/mimic-iv/core/admissions.csv.gz |awk -F, '{ print $12 }'|
-    tail -n +2 | sort | uniq | wc -l
+    tail -n +2 | sort | uniq -c
     ```
 
 ## Q3. Who's popular in Price and Prejudice
