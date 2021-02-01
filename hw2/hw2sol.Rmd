@@ -39,7 +39,11 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 
 At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your `Data Use Agreement for the MIMIC-IV (v0.4)`.
 
-**Solution**: I have not got credentialed on the PhysioNet yet.
+**Solution**: 
+
+```{r echo=FALSE, out.width="50%", fig.cap="Data Use Agreement"}
+knitr::include_graphics("Agreement_MIMIC-IV.png")
+```
 
 ## Q2. `read.csv` (base R) vs `read_csv` (tidyverse) vs `fread` (data.table)
 
