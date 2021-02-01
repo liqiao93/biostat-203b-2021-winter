@@ -49,20 +49,20 @@ In this homework, we stick to the tidyverse.
 
 **Solution**:
 ```{r}
-read.csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
+admission <- read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 
 ```
 
 ```{r}
-read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
+admission <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 ```
 
 ```{r}
-fread("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
+admission <- fread(str_c(mimic_path,"/core/admissions.csv.gz"))
 
 ```
 
-Among the three  programs, `read.csv` is the slowest,`read_csv` is much faster than `read.csv`, and `fread` is even faster than `read_csv`.
+Among the three programs, `read.csv` is the slowest,`read_csv` is much faster than `read.csv`, and `fread` is even faster than `read_csv`.
 
 ## Q3. ICU stays
 
@@ -74,27 +74,74 @@ Among the three  programs, `read.csv` is the slowest,`read_csv` is much faster t
 - first ICU unit  
 - last ICU unit  
 
-##Solution##:
+**Solution**:
 
 ```{r}
-icustay_table <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) %>% 
-  print(width = Inf)
-
+icustay <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) %>%
+                      print(width = Inf)
 ```
 
-Check number of unique `stay_id`. It seems each row is a unique ICU stay.
+
+Check number of unique `stay_id`. It seems each row is a unique ICU stay. The number of unique `stay_id` is 69619: 
 ```{r}
-icustay_tble %>%
+icustay %>%
   distinct(stay_id) %>%
   nrow()
 ```
 
 The number of unique `subject_id`is 50048, showing that each patient can have multiple stays:
 ```{r}
-icustay_tble %>%
+icustay %>%
   distinct(subject_id) %>%
   nrow()
 ```
+
+Length of ICU stay:
+```{r}
+icustay %>%
+  ggplot(aes(x = los)) +
+  geom_boxplot(mapping = aes(x = factor(""), y = los)) +
+  scale_y_log10()+
+  labs(x = "Length of ICU Stays", y = "Days")
+
+summarise(icustay, los_quantile = quantile(los, c(0.25, 0.5, 0.75)))
+```
+As shown in the box plot, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days.
+
+
+First ICU unit:
+```{r}
+icustay %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = first_careunit, fill = first_careunit)) +
+  theme(axis.text.x = element_blank()) +
+  labs(x = "First Care Unit", y = "Number of ICU Stays")
+
+icustay %>%
+  group_by(first_careunit) %>%
+  summarise(
+    count = n()
+  )
+```
+There are 11 first care units. Most patients initially stayed in MICU, MICU/SICU, CVICU, and SICU which have more than 10,000 stays. In contrast, only few stays occurred in Medicine and PACU.
+
+
+Last ICU stay:
+```{r}
+icustay %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = last_careunit, fill = last_careunit)) +
+  theme(axis.text.x = element_blank()) +
+  labs(x = "Last Care Unit", y = "Number of ICU stays")
+
+icustay %>%
+  group_by(last_careunit) %>%
+  summarise(
+    count = n()
+  )
+```
+
+There are 9 last care units in total. Similar to first care unit, MICU, MICU/SICU, CVICU, and SICU are the most popular units.
 
 ## Q4. `admission` data
 
