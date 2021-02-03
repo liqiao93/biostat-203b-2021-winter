@@ -52,16 +52,16 @@ There are quite a few utilities in R for reading data files. Let us test the spe
 In this homework, we stick to the tidyverse. 
 
 **Solution**:
-```{r}
+```{r, eval = FALSE}
 admission <- read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 
 ```
 
-```{r}
+```{r, eval = FALSE}
 admission <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 ```
 
-```{r}
+```{r, eval = FALSE}
 admission <- fread(str_c(mimic_path,"/core/admissions.csv.gz"))
 
 ```
@@ -86,21 +86,21 @@ icustay <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) %>%
 ```
 
 
-Check number of unique `stay_id`. It seems each row is a unique ICU stay. The number of unique `stay_id` is 69619: 
+- **number of unique `stay_id`**: It seems each row is a unique ICU stay. The number of unique `stay_id` is 69619: 
 ```{r}
 icustay %>%
   distinct(stay_id) %>%
   nrow()
 ```
 
-The number of unique `subject_id`is 50048, showing that each patient can have multiple stays:
+- **number of unique `subject_id`** is 50048, showing that each patient can have multiple stays:
 ```{r}
 icustay %>%
   distinct(subject_id) %>%
   nrow()
 ```
 
-Length of ICU stay:
+- **Length of ICU stay**: As shown in the box plot, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days.
 ```{r}
 icustay %>%
   ggplot(aes(x = los)) +
@@ -110,10 +110,10 @@ icustay %>%
 
 summarise(icustay, los_quantile = quantile(los, c(0.25, 0.5, 0.75)))
 ```
-As shown in the box plot, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days.
 
 
-First ICU unit:
+
+- **First ICU unit**: There are 11 first care units. Most patients initially stayed in MICU, MICU/SICU, CVICU, and SICU which have more than 10,000 stays. In contrast, only few stays occurred in Medicine and PACU.
 ```{r}
 icustay %>%
   ggplot() +
@@ -127,10 +127,9 @@ icustay %>%
     count = n()
   )
 ```
-There are 11 first care units. Most patients initially stayed in MICU, MICU/SICU, CVICU, and SICU which have more than 10,000 stays. In contrast, only few stays occurred in Medicine and PACU.
 
 
-Last ICU stay:
+- **Last ICU stay**: There are 9 last care units in total. Similar to first care unit, MICU, MICU/SICU, CVICU, and SICU are the most popular units.
 ```{r}
 icustay %>%
   ggplot() +
@@ -145,7 +144,7 @@ icustay %>%
   )
 ```
 
-There are 9 last care units in total. Similar to first care unit, MICU, MICU/SICU, CVICU, and SICU are the most popular units.
+
 
 ## Q4. `admission` data
 
@@ -169,6 +168,205 @@ Information of the patients admitted into hospital is available in `ADMISSION.cs
 
 Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) is admitted into hospital multiple times. When summarizing some demographic information, it makes sense to summarize based on unique patients. 
 
+**Solution**:
+```{r}
+admission <- read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz",
+                      col_types = cols(subject_id = col_integer(),
+                                       hadm_id = col_integer(),
+                                       hospital_expire_flag = col_logical()
+                                      ))
+str(admission)
+
+```
+
+- **admission year**: There are more than 6000 patient admissions between 2025 and 2185. After 2185, the total admissions decrease substantially over years. This is likely because the latest data has not been updated yet.
+```{r}
+admission %>% 
+  mutate(admityear = year(admittime)) %>% #create a new variable for admission year
+  ggplot(aes(x = admityear)) +
+  geom_freqpoly(binwidth = 1) +
+  scale_x_continuous(breaks = seq(2100, 2210, by = 10)) +
+  labs(x = "Admission Year", y = "Number of Admissions")
+
+```
+
+
+- **admission month**: The number of patient admissions for all months are similar to each other, where all the admissions are greater than 40000.
+```{r}
+admission %>% 
+  mutate(admitmonth = month(admittime, label = TRUE)) %>% #create a new variable for admission month
+  ggplot() +
+  geom_bar(aes(x = admitmonth)) + 
+  labs(x = "Admission Month", y = "Number of Admissions")
+
+```
+
+
+- **admission month day**: The admissions are consistent from the 1st day to the 28th day and decreasing after the 28th. A slight decrease at 29th is because February has 29 days every four years. And a sharp decrease at 31st is because only 7 months of a year have 31 days.
+```{r}
+admission %>% 
+  mutate(admitmd = mday(admittime)) %>% #create a new variable for admission month day
+  ggplot(aes(x = admitmd)) +
+  geom_freqpoly(binwidth = 1) + 
+  scale_x_continuous(breaks = seq(0, 31, by = 5)) + 
+  labs(x = "Admission Month Day", y = "Number of Admissions")
+```
+
+
+- **admission week day**: Overall, the differences are small between days and the number of admissions is within a range of 74500 - 76000. Nevertheless, Saturdays are busier than other days.
+```{r}
+admission %>% 
+  mutate(admitwd = wday(admittime, label = TRUE)) %>% #create a new variable for admission week day
+  ggplot() +
+  geom_bar(aes(x = admitwd)) +
+  coord_cartesian(ylim = c(73000, 76000)) +
+  labs(x = "Admission Week Day", y = "Number of Admissions") 
+```
+
+
+- admission hour: The busiest admission time in the hospitals is from 4 pm to midnight, since most patients may go to hospitals after work. It is also busy at 7 am likely because outpatient services start at 7 am and patients plan to go to hospitals before work.
+```{r}
+admission %>% 
+  mutate(admith = hour(admittime)) %>% #create a new variable for admission hour
+  ggplot() +
+  geom_bar(aes(x = admith)) + 
+  scale_x_continuous(breaks = seq(0, 23, by = 1)) +
+  labs(x = "Admission Hour", y = "Number of Admissions")
+``` 
+
+
+- **number of deaths in each year**
+
+
+
+- **admission type**: Most admissions are for EM EMER.
+```{r}
+admission %>% 
+  ggplot() +
+  geom_bar(aes(x = admission_type, fill = admission_type)) + 
+  theme(axis.text.x = element_blank()) +
+  labs(x = "Admission Type", y = "Number of Admissions")
+``` 
+
+
+- **number of admissions per patient**: More than 65% of patients visit hospitals once and about 15% of patients visited twice. Less than 20% of patients visited the hospitals more than 2 times.
+```{r}
+admission %>% 
+  group_by(subject_id) %>% 
+  summarise(count=n()) %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = count, y = ..prop.., group = 1)) + 
+  coord_cartesian(xlim = c(0,15)) +
+  scale_x_continuous(breaks = seq(0, 15, by = 1)) +   #only present the admission frequency < 15#
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
+  labs(title = "Frequency of Hospital Visits", 
+       x = "Number of Admissions per Patient", 
+       y = "Percentage of Patients") 
+  
+```
+
+
+- **admission location**: The most popular admission location is the emergency room. 
+```{r}
+admission %>% 
+  ggplot() +
+  geom_bar(aes(x = admission_location, fill = admission_location)) + 
+  theme(axis.text.x = element_blank()) +
+  labs(x = "Admission Location", y = "Number of Admissions")
+``` 
+
+
+- **discharge location**: Patients are most likely going home after they are discharged from the hospital.
+```{r}
+admission %>% 
+  ggplot() +
+  geom_bar(aes(x = discharge_location, fill = discharge_location)) + 
+  theme(axis.text.x = element_blank()) +
+  labs(x = "Discharge Location")
+``` 
+
+
+- **insurance**: Because one patient can visit the hospital multiple times, I removed the duplicates so that insurance information for each patient can be obtained. As a result, 9% of patients have Medicaid and 23% of patients use Medicare. The majority of patients (68%) use other insurance.
+```{r}
+admission %>% 
+  distinct(subject_id, .keep_all = TRUE) %>%  #remove duplicates - patients with multiple visits
+  ggplot(mapping = aes(x = insurance, y = ..prop.., group = 1)) +
+  geom_bar(fill = c("pink", "darkolivegreen1", "lightblue")) + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
+  geom_text(aes(label = scales::percent(..prop..),               
+                   y= ..prop.. ), stat= "count", vjust = -.5) +   #add percentage labels to the top of bar charts
+  labs(x = "Insurance Type", y = "Percentage of Patients", 
+       title = "Patient Insurance") + 
+  theme_minimal() 
+  
+``` 
+
+
+- **language**: Although the language data for the 7% of patients is unknown, the majority of patients (93%) speak English.
+
+```{r}
+admission %>% 
+  distinct(subject_id, .keep_all = TRUE) %>%  
+  ggplot(mapping = aes(x = language, y = ..prop.., group = 1)) +
+  geom_bar(fill = c("coral1", "cornflowerblue")) + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
+  geom_text(aes(label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +  
+  labs(title = "Patient Language", 
+       x = "Language", 
+       y = "Percentage of Patients") 
+  
+```
+
+
+- **martial status**:
+As shown in the graph, about 33% of patients are married and 30.5% of patients are single. 4.8% of patients are divorced. 6.9% of patients are widowed. Marital status data for 24.8% patients is not available. 
+```{r}
+admission %>% 
+  distinct(subject_id, .keep_all = TRUE) %>%  
+  ggplot(mapping = aes(x = marital_status, y = ..prop.., group = 1, 
+                       stat="count")) +
+  geom_bar() + 
+  geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.05), labels = scales::percent) +
+  labs(title = "Patient Marital Status", 
+       x = "Marital Status", 
+       y = "Percentage of Patients") 
+  
+```
+
+
+- **ethnicity**: Most patients are white.
+```{r}
+admission %>% 
+  distinct(subject_id, .keep_all = TRUE) %>%  
+  ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1, stat = "count")) +
+  geom_bar(fill = "#FF6666") + 
+  geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.10), labels = scales::percent) +
+  labs(title = "Patient Ethnicity", 
+       x = "Ethnicity", 
+       y = "Percentage of Patients") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+```
+
+
+- **death**:
+I would first check if hospital_expire_flag is consistent with death_time. check the proportion
+```{r}
+admission %>% 
+  distinct(subject_id, .keep_all = TRUE) %>%  
+  ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1, stat = "count")) +
+  geom_bar(fill = "#FF6666") + 
+
+  
+```
+
+
+
 ## Q5. `patient` data
 
 Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients/>) and summarize following variables using appropriate numerics and graphs:  
@@ -181,6 +379,59 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
 
 We are interested in the lab measurements of creatinine, potassium, sodium, chloride, bicarbonate, hematocrit, white blood cell count, glucose, magnesium, calcium, phosphorus, and lactate. Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
+
+**Soultion**:
+
+I would first take a look at first lines of the labevents data.
+```{r}
+system(str_c("zcat <", shQuote(str_c(mimic_path, "/hosp/labevents.csv.gz")), 
+             "| head"), intern = TRUE)
+
+read_csv()
+```
+`read_csv()` doesn't work (memory issues) even with selected columns. Thus, I would use data.table instead.
+
+```{r}
+if (!file.exists("labevents_icustays.csv.gz")) {
+  #it takes fread 200 seconds to read in labevents/csv.gz#
+  system.time(labevents <-
+    fread(str_c(mimic_path, "/hosp/labevents.csv.gz"),
+            select = c("subject_id", "hadm_id", "itemid", "charttime", "valuenum"),
+            nThread = 4))
+  labevents %>%
+    semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
+    fwrite("labevents_icustays.csv.gz", nThread = 4)
+}
+#15 seconds to read in the smaller data set#
+system.time(labevents <- fread("labevents_icustays.csv.gz"))
+labevents %>%
+  as_tibble() %>%
+  print(width = Inf)
+
+```
+
+```{r}
+labitem <- 'Creatinine'
+creatinine_items <- dlabtimes_tble %>%
+  filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
+  print(width = Inf)
+```
+
+Look for the most frequent lab items:
+```{r}
+labtimes <- c("creatinine", )
+
+itemids <- rep(o, length(labtimes))
+i <- 1
+for (labtimes in labitems) {
+  print(str_interp("search for ${labitem}"))
+}
+```
+
+```{r}
+tibble(itemid = )
+
+```
 
 ## Q7. Vitals from chartered events
 
@@ -200,8 +451,25 @@ Let us create a tibble for all ICU stays, where rows are
 and columns contains at least following variables  
 
 - all variables in `icustays.csv.gz`  
-- all variables in `admission.csv.gz`  
+- all variables in `admission.csv.gz` 
+- all variables in `patients.csv.gz` 
 - first lab measurements during ICU stay  
 - first vitals measurement during ICU stay  
 - an indicator variable whether the patient died within 30 days of hospital admission  
+
+**Solution**：
+```{r}
+icustays %>%
+  # take first ICU stay of each unique patient
+  group_by(subject_id) %>%
+  slice_min(intime) %>%
+  #merge admission table
+  left_join(admission, by = c("subject_id", "hadm_id")) %>%
+  #merge patients table
+  left_join(patients, by = "subject_id") %>%
+  # only keep adults age at admission >18
+  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
+  filter(age_at_adm >= 18) %>%
+  print(width = Inf)
+```
 
