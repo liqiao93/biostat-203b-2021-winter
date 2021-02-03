@@ -52,16 +52,16 @@ There are quite a few utilities in R for reading data files. Let us test the spe
 In this homework, we stick to the tidyverse. 
 
 **Solution**:
-```{r, eval = FALSE}
+```{r, eval = F}
 admission <- read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 
 ```
 
-```{r, eval = FALSE}
+```{r, eval = F}
 admission <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz"))
 ```
 
-```{r, eval = FALSE}
+```{r, eval = F}
 admission <- fread(str_c(mimic_path,"/core/admissions.csv.gz"))
 
 ```
@@ -175,7 +175,7 @@ admission <- read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz",
                                        hadm_id = col_integer(),
                                        hospital_expire_flag = col_logical()
                                       ))
-str(admission)
+admission
 
 ```
 
@@ -235,8 +235,17 @@ admission %>%
 ``` 
 
 
-- **number of deaths in each year**
-
+- **number of deaths in each year**: The number of deaths per year increases from ~ 60 in 2110 to ~ 120 in 2130 and stays consistent since then. A sharp decrease from 2190 to 2210 is likely due to a lack of data.
+```{r}
+admission %>%
+  #add a new variable death year when deaths occured 
+  mutate(deathyear = year(deathtime)) %>%
+  ggplot() +
+  geom_bar(aes(x = deathyear)) +
+  scale_y_continuous(breaks = seq(0, 160, by = 20)) +
+  scale_x_continuous(breaks = seq(2100, 2250, by = 10)) +
+  labs(x = "Year of death", y = "Number of deaths in each year")
+```
 
 
 - **admission type**: Most admissions are for EM EMER.
@@ -252,12 +261,14 @@ admission %>%
 - **number of admissions per patient**: More than 65% of patients visit hospitals once and about 15% of patients visited twice. Less than 20% of patients visited the hospitals more than 2 times.
 ```{r}
 admission %>% 
+  #group the admission data by each patient
   group_by(subject_id) %>% 
   summarise(count=n()) %>%
   ggplot() +
   geom_bar(mapping = aes(x = count, y = ..prop.., group = 1)) + 
   coord_cartesian(xlim = c(0,15)) +
-  scale_x_continuous(breaks = seq(0, 15, by = 1)) +   #only present the admission frequency < 15#
+  #only present the admission frequency < 15#
+  scale_x_continuous(breaks = seq(0, 15, by = 1)) +   
   scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
   labs(title = "Frequency of Hospital Visits", 
        x = "Number of Admissions per Patient", 
@@ -289,12 +300,14 @@ admission %>%
 - **insurance**: Because one patient can visit the hospital multiple times, I removed the duplicates so that insurance information for each patient can be obtained. As a result, 9% of patients have Medicaid and 23% of patients use Medicare. The majority of patients (68%) use other insurance.
 ```{r}
 admission %>% 
-  distinct(subject_id, .keep_all = TRUE) %>%  #remove duplicates - patients with multiple visits
+  #remove duplicates - patients with multiple visits
+  distinct(subject_id, .keep_all = TRUE) %>%  
   ggplot(mapping = aes(x = insurance, y = ..prop.., group = 1)) +
   geom_bar(fill = c("pink", "darkolivegreen1", "lightblue")) + 
   scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
+  #add percentage labels to the top of bar charts
   geom_text(aes(label = scales::percent(..prop..),               
-                   y= ..prop.. ), stat= "count", vjust = -.5) +   #add percentage labels to the top of bar charts
+                   y= ..prop.. ), stat= "count", vjust = -.5) +   
   labs(x = "Insurance Type", y = "Percentage of Patients", 
        title = "Patient Insurance") + 
   theme_minimal() 
@@ -337,34 +350,62 @@ admission %>%
 ```
 
 
-- **ethnicity**: Most patients are white.
+- **ethnicity**: More than 60% of patients are white, suggesting possible bias on the ethnicity distribution. The second largest group is Black/African American ~ 12%.
 ```{r}
 admission %>% 
   distinct(subject_id, .keep_all = TRUE) %>%  
-  ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1, stat = "count")) +
+  ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1)) +
   geom_bar(fill = "#FF6666") + 
   geom_text(aes( label = scales::percent(..prop..),
-                   y= ..prop.. ), stat= "count", vjust = -.5) +
+                   y= ..prop.. ), stat= "count", vjust = -.5, 
+                   nudge_y = 0.05) +
   scale_y_continuous(breaks = seq(0, 1, by = 0.10), labels = scales::percent) +
   labs(title = "Patient Ethnicity", 
        x = "Ethnicity", 
        y = "Percentage of Patients") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  coord_flip()
   
 ```
 
 
 - **death**:
-I would first check if hospital_expire_flag is consistent with death_time. check the proportion
-```{r}
-admission %>% 
-  distinct(subject_id, .keep_all = TRUE) %>%  
-  ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1, stat = "count")) +
-  geom_bar(fill = "#FF6666") + 
 
-  
+First check if `hospital_expire_flag` is consistent with `deathtime` by calculating the proportion of deaths. I found that the proportions of deaths using the two variables are very similar - close to 2%. There were 4 more deaths using `hospital_expire_flag` than `deathtime`. This is likely because the death time data of the 4 patients was not collected. I tend to select `hospital_expire_flag` as the variable for creating the graph.
+```{r}
+#create a new dataset `adm` that only keeps unique subject_id
+adm <- admission %>%
+  distinct(subject_id, .keep_all = TRUE)
+#count the total number of deaths using variable `deathtime`
+sum(!is.na(adm$deathtime))
+#calculate the proportion of deaths
+sum(!is.na(adm$deathtime))/n_distinct(adm$subject_id)
+
+#calculate the percentage of deaths using variable `hospital_expire_flag`
+admission %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  group_by(hospital_expire_flag) %>%
+  summarise(count = n()) %>%
+  mutate(prop = count/sum(count)) 
 ```
 
+
+2 % of patients died in hospitals.
+```{r}
+#create the bar plot using variable `hospital_expire_flag`
+admission %>%
+  distinct(subject_id, .keep_all = TRUE) %>%
+  group_by(hospital_expire_flag) %>%
+  summarise(count = n()) %>%
+  mutate(prop = count/sum(count)) %>%
+  ggplot(aes(x = hospital_expire_flag, y = prop, fill = hospital_expire_flag)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.10), labels = scales::percent) +
+  geom_text(aes(label = scales::percent (prop), y = prop), stat= "identity", vjust = -.5) +
+  labs(title = "Deaths in Hospitals", 
+       x = "Deaths or not", 
+       y = "Percentage")
+  
+```
 
 
 ## Q5. `patient` data
@@ -391,7 +432,7 @@ read_csv()
 ```
 `read_csv()` doesn't work (memory issues) even with selected columns. Thus, I would use data.table instead.
 
-```{r}
+```{r, eval = F}
 if (!file.exists("labevents_icustays.csv.gz")) {
   #it takes fread 200 seconds to read in labevents/csv.gz#
   system.time(labevents <-
