@@ -191,8 +191,6 @@ admission <- read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz",
                                        hadm_id = col_integer(),
                                        hospital_expire_flag = col_logical()
                                       ))
-admission
-
 ```
 
 - **admission year**: There are more than 6000 patient admissions between 2025 and 2185. After 2185, the total admissions decrease substantially over years. This is likely because the latest data has not been updated yet.
@@ -240,7 +238,7 @@ admission %>%
 ```
 
 
-- admission hour: The busiest admission time in the hospitals is from 4 pm to midnight, since most patients may go to hospitals after work. It is also busy at 7 am likely because outpatient services start at 7 am and patients plan to go to hospitals before work.
+- **admission hour**: The busiest admission time in the hospitals is from 4 pm to midnight, since most patients may go to hospitals after work. It is also busy at 7 am likely because outpatient services start at 7 am and patients plan to go to hospitals before work.
 ```{r}
 admission %>% 
   mutate(admith = hour(admittime)) %>% #create a new variable for admission hour
@@ -430,10 +428,11 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
-**Solution**: I found that there are no duplicates based on subject_id.
+**Solution**: I first check number of unique `subject_id` and found that there are no duplicates.
 ``` {r}
 patient <- read_csv("/usr/203b-data/mimic-iv/core/patients.csv.gz")
-
+```
+```{r}
 #check if there are duplicates for each patient#
 patient %>%
   distinct(., subject_id, .keep_all = TRUE) %>%
@@ -454,31 +453,32 @@ patient %>%
   theme_minimal()
 ```
 
-- **anchor_age**: I have observed an overall pattern that the percentage of patients decreased with increasing anchor age. About 3% of patients were at age 20. An unexpected bar was observed for patients who were over 90 years old.
+- **anchor_age**: I have observed an overall pattern that the percentage of patients decreased with increasing anchor age. It has a bimodal distribution with a primary mode (~ 3% of total patients) around age 20 and a secondary mode (~ 1.8% of total patients) around age 50 - 60. 
 ```{r}
 patient %>%
 #I observed a high peak at 0 likely due to missing values, so I only keep anchor_age that is not equal to 0#
   filter(anchor_age != 0) %>%
-  ggplot(aes(x = anchor_age, y = ..prop.., group = 1)) +
-  geom_bar(stat="count", fill = "blue") +
+  ggplot(aes(x = anchor_age)) +
+  geom_histogram(mapping = aes(y= ..density..), position = "identity", 
+                 fill = "blue", color = "yellow", bins = 30) +
+  geom_density(alpha = 0.5) +
+  labs(y = "Percentage of total patients", x = "Anchor age of patients") +
   scale_y_continuous(breaks = seq(0, 1, by = 0.01), labels = scales::percent) +
   scale_x_continuous(breaks = seq(0, 100, by = 5)) +
-  labs(y = "Percentage of total patients", x = "Anchor age of patients") +
   theme_minimal()
   
 ```
-
 
 ## Q6. Lab results
 
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
 
-We are interested in the lab measurements of creatinine, potassium, sodium, chloride, bicarbonate, hematocrit, white blood cell count, glucose, magnesium, calcium, phosphorus, and lactate. Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
+We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the itemids of these lab measurements from d_labitems.csv.gz and retrieve a subset of labevents.csv.gz only containing these items.
 
-**Soultion**:
+**Solution**:
 
 I would first take a look at first lines of the labevents data.
-```{r, eval=F}
+```{r, eval = F}
 system(str_c("zcat <", shQuote(str_c(mimic_path, "/hosp/labevents.csv.gz")), 
              "| head"), intern = TRUE)
 
@@ -486,46 +486,66 @@ read_csv()
 ```
 `read_csv()` doesn't work (memory issues) even with selected columns. Thus, I would use data.table instead.
 
-```{r, eval = F}
+```{r}
 if (!file.exists("labevents_icustays.csv.gz")) {
-  #it takes fread 200 seconds to read in labevents/csv.gz#
-  system.time(labevents <-
+#it takes 200 seconds for `fread` to read in labevents.csv.gz#
+  system.time(labevents_tble <-
     fread(str_c(mimic_path, "/hosp/labevents.csv.gz"),
             select = c("subject_id", "hadm_id", "itemid", "charttime", "valuenum"),
             nThread = 4))
-  labevents %>%
+  labevents_tble %>%
     semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
     fwrite("labevents_icustays.csv.gz", nThread = 4)
 }
-#15 seconds to read in the smaller data set#
-system.time(labevents <- fread("labevents_icustays.csv.gz"))
-labevents %>%
+#It takes 13 seconds to read in the smaller data set#
+system.time(labevents_tble <- fread("labevents_icustays.csv.gz"))
+
+labevents_tble %>%
   as_tibble() %>%
   print(width = Inf)
 
 ```
 
-```{r, eval=F}
+read in the lab item dictionary
+```{r}
+dlabitems_tble <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) %>%
+  print(width = Inf)
+```
+These are lab items that are related to creatinine.
+```{r}
 labitem <- 'Creatinine'
-creatinine_items <- dlabtimes_tble %>%
+creatinine_items <- dlabitems_tble %>%
   filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
   print(width = Inf)
 ```
 
-Look for the most frequent lab items:
-```{r, eval=F}
-labtimes <- c("creatinine", )
+Next, look for the most frequent lab item related to creatinine:
+```{r}
+labitems <- c("creatinine", "potassium", "sodium", "chloride", 
+              "bicarbonate", "hematocrit", "white blood cell", 
+              "glucose", "magnesium", "calcium", "lactate")
 
-itemids <- rep(o, length(labtimes))
+itemids <- rep(0, length(labitems)) 
 i <- 1
-for (labtimes in labitems) {
+for (labitem in labitems) {
   print(str_interp("search for ${labitem}"))
+  itemid_list <- dlabitems_tble %>%
+    filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
+    .$itemid
+  itemid <- labevents_tble %>%
+    filter(itemid %in% itemid_list) %>%
+    count(itemid) %>%
+    arrange(desc(n)) %>%
+    slice(1) %>%
+    .$itemid
+  itemids[i] <- itemid
+  i <- i + 1
 }
 ```
 
 ```{r}
-tibble(itemid = )
-
+tibble(itemid = itemids, labitem = labitems) %>%
+  print(width = Inf)
 ```
 
 ## Q7. Vitals from chartered events
@@ -553,17 +573,17 @@ and columns contains at least following variables
 - an indicator variable whether the patient died within 30 days of hospital admission  
 
 **Solution**：
-```{r, eval=F}
-icustays %>%
+```{r}
+icustay %>%
   # take first ICU stay of each unique patient
   group_by(subject_id) %>%
   slice_min(intime) %>%
   #merge admission table
   left_join(admission, by = c("subject_id", "hadm_id")) %>%
   #merge patients table
-  left_join(patients, by = "subject_id") %>%
-  # only keep adults age at admission >18
+  left_join(patient, by = "subject_id") %>%
   mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
+  # only keep adults age at admission >18
   filter(age_at_adm >= 18) %>%
   print(width = Inf)
 ```
