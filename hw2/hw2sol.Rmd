@@ -1,6 +1,6 @@
 ---
 title: "Biostat 203B Homework 2 Solution"
-subtitle: Due Feb 5 @ 11:59PM
+subtitle: Due Feb 10 @ 11:59PM
 author name: "Liqiao (Vicky) Li"
 output: 
   html_document:
@@ -52,21 +52,21 @@ There are quite a few utilities in R for reading data files. Let us test the spe
 In this homework, we stick to the tidyverse. 
 
 **Solution**:
-```{r, eval = F}
-admission <- read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))
+```{r}
+system.time(read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))) 
 
 ```
 
-```{r, eval = F}
-admission <- read_csv(str_c(mimic_path, "/core/admissions.csv.gz"))
+```{r}
+system.time(read_csv(str_c(mimic_path, "/core/admissions.csv.gz")))
 ```
 
-```{r, eval = F}
-admission <- fread(str_c(mimic_path,"/core/admissions.csv.gz"))
+```{r}
+system.time(fread(str_c(mimic_path,"/core/admissions.csv.gz")))
 
 ```
 
-Among the three programs, `read.csv` is the slowest,`read_csv` is much faster than `read.csv`, and `fread` is even faster than `read_csv`.
+Among the three programs, `read.csv` that takes more than 50 seconds is the slowest,`read_csv` that only takes 5 seconds is much faster than `read.csv`, and `fread` with 2 seconds is even faster than `read_csv`.
 
 ## Q3. ICU stays
 
@@ -100,15 +100,31 @@ icustay %>%
   nrow()
 ```
 
-- **Length of ICU stay**: As shown in the box plot, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days.
+- **Length of ICU stay**: As shown in the box plot and histogram, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days. The calculated length of ICU stays using the difference between `outtime` and `intime` is the same as the variable `los`.
 ```{r}
+#directly use the variable `los` for length of ICU stays# 
 icustay %>%
   ggplot(aes(x = los)) +
+#create a boxplot to summarize the length of ICU stays#
   geom_boxplot(mapping = aes(x = factor(""), y = los)) +
-  scale_y_log10()+
-  labs(x = "Length of ICU Stays", y = "Days")
+  scale_y_log10() +
+  labs(y = "Length of ICU Stays in Days)")
+summarise(icustay, los_IQR = quantile(los, c(0.25, 0.5, 0.75)))
 
-summarise(icustay, los_quantile = quantile(los, c(0.25, 0.5, 0.75)))
+
+#create a new variable and determine the length of stay using the difference between outtime and intime#
+icustay <- icustay %>%
+  mutate(length = as.numeric(outtime - intime, units = "days")) 
+
+icustay %>%
+  ggplot(aes(x=length)) +
+  geom_histogram(aes(y = ..density..), color = "red", fill = "pink",
+                 bins = 30) +
+  scale_x_log10() +
+  labs(x = "Length of ICU Stays in Days", y = "Density") 
+
+#obtain the IQR and median using the calculated length of stay
+summarise(icustay, length_IQR = quantile(length, c(0.25, 0.5, 0.75)))
 ```
 
 
@@ -389,9 +405,8 @@ admission %>%
 ```
 
 
-2 % of patients died in hospitals.
+Then I created the bar plot using variable `hospital_expire_flag`. About 2 % of patients died in the hospitals.
 ```{r}
-#create the bar plot using variable `hospital_expire_flag`
 admission %>%
   distinct(subject_id, .keep_all = TRUE) %>%
   group_by(hospital_expire_flag) %>%
@@ -415,6 +430,45 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
+**Solution**: I found that there are no duplicates based on subject_id.
+``` {r}
+patient <- read_csv("/usr/203b-data/mimic-iv/core/patients.csv.gz")
+
+#check if there are duplicates for each patient#
+patient %>%
+  distinct(., subject_id, .keep_all = TRUE) %>%
+  nrow()
+  
+```
+
+- **gender**: 52.2% of patients were female and 47.8% of patients were male.
+```{r}
+patient %>%
+  ggplot(aes(x = factor(gender), y = ..prop.., group = 1)) +
+  geom_bar(stat = "count", fill = c("coral2", "lightblue")) +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
+  geom_text(aes(label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +  
+  scale_x_discrete(label = c("Female", "Male")) + 
+  labs(y = "Percentage of total patients", x = "Gender") +
+  theme_minimal()
+```
+
+- **anchor_age**: I have observed an overall pattern that the percentage of patients decreased with increasing anchor age. About 3% of patients were at age 20. An unexpected bar was observed for patients who were over 90 years old.
+```{r}
+patient %>%
+#I observed a high peak at 0 likely due to missing values, so I only keep anchor_age that is not equal to 0#
+  filter(anchor_age != 0) %>%
+  ggplot(aes(x = anchor_age, y = ..prop.., group = 1)) +
+  geom_bar(stat="count", fill = "blue") +
+  scale_y_continuous(breaks = seq(0, 1, by = 0.01), labels = scales::percent) +
+  scale_x_continuous(breaks = seq(0, 100, by = 5)) +
+  labs(y = "Percentage of total patients", x = "Anchor age of patients") +
+  theme_minimal()
+  
+```
+
+
 ## Q6. Lab results
 
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
@@ -424,7 +478,7 @@ We are interested in the lab measurements of creatinine, potassium, sodium, chlo
 **Soultion**:
 
 I would first take a look at first lines of the labevents data.
-```{r}
+```{r, eval=F}
 system(str_c("zcat <", shQuote(str_c(mimic_path, "/hosp/labevents.csv.gz")), 
              "| head"), intern = TRUE)
 
@@ -451,7 +505,7 @@ labevents %>%
 
 ```
 
-```{r}
+```{r, eval=F}
 labitem <- 'Creatinine'
 creatinine_items <- dlabtimes_tble %>%
   filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
@@ -459,7 +513,7 @@ creatinine_items <- dlabtimes_tble %>%
 ```
 
 Look for the most frequent lab items:
-```{r}
+```{r, eval=F}
 labtimes <- c("creatinine", )
 
 itemids <- rep(o, length(labtimes))
@@ -499,7 +553,7 @@ and columns contains at least following variables
 - an indicator variable whether the patient died within 30 days of hospital admission  
 
 **Solution**：
-```{r}
+```{r, eval=F}
 icustays %>%
   # take first ICU stay of each unique patient
   group_by(subject_id) %>%
