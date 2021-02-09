@@ -315,7 +315,7 @@ admission %>%
 ```{r}
 admission %>% 
   #remove duplicates - patients with multiple visits
-  distinct(subject_id, .keep_all = TRUE) %>%  
+  distinct(., subject_id, .keep_all = TRUE) %>%  
   ggplot(mapping = aes(x = insurance, y = ..prop.., group = 1)) +
   geom_bar(fill = c("pink", "darkolivegreen1", "lightblue")) + 
   scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
@@ -333,7 +333,7 @@ admission %>%
 
 ```{r}
 admission %>% 
-  distinct(subject_id, .keep_all = TRUE) %>%  
+  distinct(., subject_id, .keep_all = TRUE) %>%  
   ggplot(mapping = aes(x = language, y = ..prop.., group = 1)) +
   geom_bar(fill = c("coral1", "cornflowerblue")) + 
   scale_y_continuous(breaks = seq(0, 1, by = 0.1), labels = scales::percent) +
@@ -350,7 +350,7 @@ admission %>%
 As shown in the graph, about 33% of patients are married and 30.5% of patients are single. 4.8% of patients are divorced. 6.9% of patients are widowed. Marital status data for 24.8% patients is not available. 
 ```{r}
 admission %>% 
-  distinct(subject_id, .keep_all = TRUE) %>%  
+  distinct(., subject_id, .keep_all = TRUE) %>%  
   ggplot(mapping = aes(x = marital_status, y = ..prop.., group = 1, 
                        stat="count")) +
   geom_bar() + 
@@ -367,7 +367,7 @@ admission %>%
 - **ethnicity**: More than 60% of patients are white, suggesting possible bias on the ethnicity distribution. The second largest group is Black/African American ~ 12%.
 ```{r}
 admission %>% 
-  distinct(subject_id, .keep_all = TRUE) %>%  
+  distinct(., subject_id, .keep_all = TRUE) %>%  
   ggplot(mapping = aes(x = ethnicity, y = ..prop.., group = 1)) +
   geom_bar(fill = "#FF6666") + 
   geom_text(aes( label = scales::percent(..prop..),
@@ -388,7 +388,7 @@ First check if `hospital_expire_flag` is consistent with `deathtime` by calculat
 ```{r}
 #create a new dataset `adm` that only keeps unique subject_id
 adm <- admission %>%
-  distinct(subject_id, .keep_all = TRUE)
+  distinct(., subject_id, .keep_all = TRUE)
 #count the total number of deaths using variable `deathtime`
 sum(!is.na(adm$deathtime))
 #calculate the proportion of deaths
@@ -406,7 +406,7 @@ admission %>%
 Then I created the bar plot using variable `hospital_expire_flag`. About 2 % of patients died in the hospitals.
 ```{r}
 admission %>%
-  distinct(subject_id, .keep_all = TRUE) %>%
+  distinct(., subject_id, .keep_all = TRUE) %>%
   group_by(hospital_expire_flag) %>%
   summarise(count = n()) %>%
   mutate(prop = count/sum(count)) %>%
@@ -473,7 +473,7 @@ patient %>%
 
 `labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
 
-We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the itemids of these lab measurements from d_labitems.csv.gz and retrieve a subset of labevents.csv.gz only containing these items.
+We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
 
 **Solution**:
 
@@ -544,17 +544,124 @@ for (labitem in labitems) {
 ```
 
 ```{r}
-tibble(itemid = itemids, labitem = labitems) %>%
+targetitem <- tibble(itemid = itemids, labitem = labitems) %>%
   print(width = Inf)
 ```
 
+Generate a subset of `labevets.csv.gz` only containing the selected items. 
+```{r}
+labevents_subset <- labevents_tble %>%
+  inner_join(targetitem, by = "itemid")
+
+labevents_subset
+```
+```{r}
+#create a subset of labevents.csv.gz file in the local folder for future use
+write_csv(labevents_subset, "labevents_subset.csv.gz")
+```
+```{r}
+labevents_subset <- read_csv("labevents_subset.csv.gz")
+labevents_subset 
+```
+
+
+
+
 ## Q7. Vitals from chartered events
 
-We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate.
+We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the `itemid`s of these vitals from `d_items.csv.gz` and retrieve a subset of `chartevents.csv.gz` only containing these items.
 
-`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `ITEMID` variable indicates a single measurement type in the database. The `VALUE` variable is the value measured for `ITEMID`. 
+`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`.
 
-`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
+`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
+
+**Solution**:
+```{r, eval = F}
+system(str_c("zcat <", shQuote(str_c(mimic_path, "/icu/chartevents.csv.gz")), 
+             "| head"), intern = TRUE)
+read_csv()
+```
+
+I first tried the codes below but it did not run successfully due to storage issue.  
+```{r, eval = F}
+if (!file.exists("chartevents_icustays.csv.gz")) {
+  system.time(chartevents_tble <-
+    fread(str_c(mimic_path, "/icu/chartevents.csv.gz"),
+            select = c("subject_id", "hadm_id", "itemid", "charttime", "valuenum"),
+            nThread = 2))
+  chartevents_tble %>%
+    semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
+    fwrite("chartevents_icustays.csv.gz")
+}
+
+system.time(chartevents_tble <- fread("chartevents_icustays.csv.gz"))
+
+```
+```{r}
+chartevents_tble %>%
+  as_tibble() %>%
+  print(width = Inf)
+
+```
+
+
+Read the filtered subset file provided by Dr. Zhou. 
+```{r}
+chartevents_tble <- 
+read_csv( 
+"/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz") %>% 
+  print(width = Inf)
+```
+
+
+Read the the dictionary for the `itemid` in `chartevents.csv.gz`.
+```{r}
+ditems_tble <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
+  print(width = Inf)
+```
+Items that are related to heart rate:
+```{r}
+item <- 'heart rate'
+hr_items <- ditems_tble %>%
+  filter(str_detect(label, regex(item, ignore_case = T))) %>%
+  print(width = Inf)
+```
+
+Items that are related to `blood pressure mean`:
+```{r}
+item <- 'blood pressure mean'
+systolic_items <- ditems_tble %>%
+  filter(str_detect(label, regex(item, ignore_case = T))) %>%
+  print(width = Inf)
+```
+
+Find the most frequent item related to systolic:
+```{r, eval=F}
+items <- c("heart rate", "systolic", "body temperature", 
+              "SpO2", "respiratory rate")
+
+itemids <- rep(0, length(items)) 
+i <- 1
+for (item in items) {
+  print(str_interp("search for ${item}"))
+  itemid_list <- ditems_tble %>%
+    filter(str_detect(label, regex(item, ignore_case = T))) %>%
+    .$itemid
+  itemid <- chartevents_tble %>%
+    filter(itemid %in% itemid_list) %>%
+    count(itemid) %>%
+    arrange(desc(n)) %>%
+    slice(1) %>%
+    .$itemid
+  itemids[i] <- itemid
+  i <- i + 1
+}
+```
+
+```{r}
+vitalitem <- tibble(itemid = itemids, item = items) %>%
+  print(width = Inf)
+```
 
 ## Q8. Putting things together
 
@@ -563,11 +670,11 @@ Let us create a tibble for all ICU stays, where rows are
 - first ICU stay of each unique patient  
 - adults (age at admission > 18)  
 
-and columns contains at least following variables  
+and columns contain at least following variables  
 
 - all variables in `icustays.csv.gz`  
-- all variables in `admission.csv.gz` 
-- all variables in `patients.csv.gz` 
+- all variables in `admission.csv.gz`  
+- all variables in `patients.csv.gz`  
 - first lab measurements during ICU stay  
 - first vitals measurement during ICU stay  
 - an indicator variable whether the patient died within 30 days of hospital admission  
