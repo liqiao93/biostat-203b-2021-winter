@@ -1,6 +1,6 @@
 ---
 title: "Biostat 203B Homework 2 Solution"
-subtitle: Due Feb 10 @ 11:59PM
+subtitle: Due Feb 12 @ 11:59PM
 author name: "Liqiao (Vicky) Li"
 output: 
   html_document:
@@ -548,7 +548,7 @@ targetitem <- tibble(itemid = itemids, labitem = labitems) %>%
   print(width = Inf)
 ```
 
-Generate a subset of `labevets.csv.gz` only containing the selected items. 
+Generate a subset of `labevents.csv.gz` only containing the selected items. 
 ```{r}
 labevents_subset <- labevents_tble %>%
   inner_join(targetitem, by = "itemid")
@@ -560,12 +560,8 @@ labevents_subset
 write_csv(labevents_subset, "labevents_subset.csv.gz")
 ```
 ```{r}
-labevents_subset <- read_csv("labevents_subset.csv.gz")
-labevents_subset 
+labevents_subset <- fread("labevents_subset.csv.gz")
 ```
-
-
-
 
 ## Q7. Vitals from chartered events
 
@@ -576,13 +572,13 @@ We are interested in the vitals for ICU patients: heart rate, mean and systolic 
 `d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
 
 **Solution**:
-```{r, eval = F}
+```{r}
 system(str_c("zcat <", shQuote(str_c(mimic_path, "/icu/chartevents.csv.gz")), 
              "| head"), intern = TRUE)
 read_csv()
 ```
 
-I first tried the codes below but it did not run successfully due to storage issue.  
+I first tried the codes below but it did not run successfully due to storage issue. And then I tried to read only one column but still did not work. 
 ```{r, eval = F}
 if (!file.exists("chartevents_icustays.csv.gz")) {
   system.time(chartevents_tble <-
@@ -593,11 +589,7 @@ if (!file.exists("chartevents_icustays.csv.gz")) {
     semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
     fwrite("chartevents_icustays.csv.gz")
 }
-
 system.time(chartevents_tble <- fread("chartevents_icustays.csv.gz"))
-
-```
-```{r}
 chartevents_tble %>%
   as_tibble() %>%
   print(width = Inf)
@@ -605,63 +597,84 @@ chartevents_tble %>%
 ```
 
 
-Read the filtered subset file provided by Dr. Zhou. 
+Read the filtered file provided by Dr. Zhou. 
 ```{r}
-chartevents_tble <- 
-read_csv( 
-"/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz") %>% 
-  print(width = Inf)
+system(str_c("zcat <", shQuote("/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz"), 
+             "| head"), intern = TRUE)
+read_csv()
+```
+```{r}
+#It takes 66 seconds to read the file#
+system.time(chartevents_tble <- fread("/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz",
+                            header = FALSE,
+                            col.names = c("subject_id", 
+                                          "hadm_id",
+                                          "stay_id",
+                                          "charttime",
+                                          "itemid",
+                                          "valuenum"), nThread = 4) %>%
+    as_tibble() %>%
+    mutate_at(c("subject_id", "hadm_id", "stay_id", "itemid"), as.numeric) %>%
+    mutate(charttime = ymd_hms(charttime)) %>%
+    print(width = Inf))
 ```
 
+```{r}
+#Merge chartevents_tble and icustay
+chartevents_tble %>%
+    semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
+    fwrite("chartevents_icustays.csv.gz")
+```
+```{r}
+system.time(chartevents_tble <- fread("chartevents_icustays.csv.gz"))
+
+chartevents_tble %>%
+  as_tibble() %>%
+  print(width = Inf)
+```
 
 Read the the dictionary for the `itemid` in `chartevents.csv.gz`.
 ```{r}
-ditems_tble <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
-  print(width = Inf)
-```
-Items that are related to heart rate:
-```{r}
-item <- 'heart rate'
-hr_items <- ditems_tble %>%
-  filter(str_detect(label, regex(item, ignore_case = T))) %>%
+dchartitems_tble <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) %>%
   print(width = Inf)
 ```
 
 Items that are related to `blood pressure mean`:
 ```{r}
-item <- 'blood pressure mean'
-systolic_items <- ditems_tble %>%
-  filter(str_detect(label, regex(item, ignore_case = T))) %>%
+chartitem <- 'blood pressure mean'
+systolic_items <- dchartitems_tble %>%
+  filter(str_detect(label, regex(chartitem, ignore_case = T))) %>%
   print(width = Inf)
 ```
 
-Find the most frequent item related to systolic:
-```{r, eval=F}
-items <- c("heart rate", "systolic", "body temperature", 
-              "SpO2", "respiratory rate")
-
-itemids <- rep(0, length(items)) 
-i <- 1
-for (item in items) {
-  print(str_interp("search for ${item}"))
-  itemid_list <- ditems_tble %>%
-    filter(str_detect(label, regex(item, ignore_case = T))) %>%
-    .$itemid
-  itemid <- chartevents_tble %>%
-    filter(itemid %in% itemid_list) %>%
-    count(itemid) %>%
-    arrange(desc(n)) %>%
-    slice(1) %>%
-    .$itemid
-  itemids[i] <- itemid
-  i <- i + 1
+Filter the selected chart items. 
+```{r}
+for (chartitem in c("heart rate", "Blood Pressure mean", "systolic", 
+                     "temperature", "SpO2", "respiratory rate")) {
+  print(str_interp("search for ${chartitem}"))
+  dchartitems_tble %>%
+    filter(str_detect(label, regex(chartitem, ignore_case = T))) %>%
+    print(width = Inf)
 }
+
 ```
+
+Let's collect desired chart items and their labels into a tibble.
 
 ```{r}
-vitalitem <- tibble(itemid = itemids, item = items) %>%
+chartitem_itemid <- dchartitems_tble %>%
+  filter(itemid %in% c(220045, 220052, 220181, 220179, 220050, 
+                       223761, 229862, 220210)) %>%
   print(width = Inf)
 ```
+Generate a subset of `chartevents.csv.gz` only containing the selected vital items. 
+```{r}
+chartevents_subset <- chartevents_tble %>%
+  inner_join(chartitem_itemid, by = "itemid")
+
+chartevents_subset
+```
+
 
 ## Q8. Putting things together
 
@@ -689,9 +702,16 @@ icustay %>%
   left_join(admission, by = c("subject_id", "hadm_id")) %>%
   #merge patients table
   left_join(patient, by = "subject_id") %>%
-  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
   # only keep adults age at admission >18
+  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
   filter(age_at_adm >= 18) %>%
   print(width = Inf)
 ```
 
+Merge lab results
+```{r}
+#icustays_uniq_tble -< icustay %>%
+  #only keep subject_id + hadm_id that are in icustays_uniq_tble
+ # semi_join(icustays_uniq_tble, by = c("subject_id", "hadm_id")) %>%
+  #pull 
+```
