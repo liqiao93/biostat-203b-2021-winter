@@ -1,14 +1,5 @@
 ---
-<<<<<<< HEAD
-title: "Biostat 203B Homework 2"
-subtitle: Due Feb 5 @ 11:59PM
-author name: "Liqiao (Vicky) Li"
-output: 
-  html_document:
-    toc: true
-    toc_depth: 4 
-=======
-title: "Biostat 203B Homework 2 Solution"
+title: "Biostat 203B Homework 2 Solution Q1-Q5"
 subtitle: Due Feb 12 @ 11:59PM
 author name: Liqiao (Vicky) Li
 output:
@@ -18,7 +9,6 @@ output:
   pdf_document:
     toc: yes
     toc_depth: '4'
->>>>>>> develop
 ---
 
 Display machine information for reproducibility:
@@ -52,15 +42,11 @@ system(str_c("tree -s -L 2 ", shQuote(mimic_path)), intern = TRUE)
 
 At this moment, you should already get credentialed on the PhysioNet. Please include a screenshot of your `Data Use Agreement for the MIMIC-IV (v0.4)`.
 
-<<<<<<< HEAD
-**Solution**: I have not got credentialed on the PhysioNet yet.
-=======
 **Solution**: 
 
 ```{r echo=FALSE, out.width="50%", fig.cap="Data Use Agreement"}
 knitr::include_graphics("Agreement_MIMIC-IV.png")
 ```
->>>>>>> develop
 
 ## Q2. `read.csv` (base R) vs `read_csv` (tidyverse) vs `fread` (data.table)
 
@@ -70,26 +56,11 @@ In this homework, we stick to the tidyverse.
 
 **Solution**:
 ```{r}
-<<<<<<< HEAD
-read.csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
-=======
 system.time(read.csv(str_c(mimic_path, "/core/admissions.csv.gz"))) 
->>>>>>> develop
 
 ```
 
 ```{r}
-<<<<<<< HEAD
-read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
-```
-
-```{r}
-fread("/usr/203b-data/mimic-iv/core/admissions.csv.gz")
-
-```
-
-Among the three  programs, `read.csv` is the slowest,`read_csv` is much faster than `read.csv`, and `fread` is even faster than `read_csv`.
-=======
 system.time(read_csv(str_c(mimic_path, "/core/admissions.csv.gz")))
 ```
 
@@ -99,7 +70,6 @@ system.time(fread(str_c(mimic_path,"/core/admissions.csv.gz")))
 ```
 
 Among the three programs, `read.csv` that takes more than 50 seconds is the slowest,`read_csv` that only takes 5 seconds is much faster than `read.csv`, and `fread` with 2 seconds is even faster than `read_csv`.
->>>>>>> develop
 
 ## Q3. ICU stays
 
@@ -111,19 +81,6 @@ Among the three programs, `read.csv` that takes more than 50 seconds is the slow
 - first ICU unit  
 - last ICU unit  
 
-<<<<<<< HEAD
-##Solution##:
-
-```{r}
-icustay_table <- read_csv(str_c(mimic_path, "/icu/icustays.csv.gz")) %>% 
-  print(width = Inf)
-
-```
-
-Check number of unique `stay_id`. It seems each row is a unique ICU stay.
-```{r}
-icustay_tble %>%
-=======
 **Solution**:
 
 ```{r}
@@ -135,26 +92,17 @@ head(icustay)
 - **number of unique `stay_id`**: It seems each row is a unique ICU stay. The number of unique `stay_id` is 69619: 
 ```{r}
 icustay %>%
->>>>>>> develop
   distinct(stay_id) %>%
   nrow()
 ```
 
-<<<<<<< HEAD
-The number of unique `subject_id`is 50048, showing that each patient can have multiple stays:
-```{r}
-icustay_tble %>%
-=======
 - **number of unique `subject_id`** is 50048, showing that each patient can have multiple stays:
 ```{r}
 icustay %>%
->>>>>>> develop
   distinct(subject_id) %>%
   nrow()
 ```
 
-<<<<<<< HEAD
-=======
 - **Length of ICU stay**: As shown in the box plot and histogram, the length of ICU stays has a wide range. The median (IQR) length of ICU stay is 2.06 (1.13 - 4.20) days. The calculated length of ICU stays using the difference between `outtime` and `intime` is the same as the variable `los`.
 ```{r}
 #directly use the variable `los` for length of ICU stays# 
@@ -217,7 +165,6 @@ icustay %>%
 
 
 
->>>>>>> develop
 ## Q4. `admission` data
 
 Information of the patients admitted into hospital is available in `ADMISSION.csv.gz`. See <https://mimic-iv.mit.edu/docs/datasets/core/admissions/> for details of each field in this file. Summarize following variables using appropriate graphs. Explain any patterns you observe.   
@@ -240,8 +187,6 @@ Information of the patients admitted into hospital is available in `ADMISSION.cs
 
 Note it is possible that one patient (uniquely identified by the `SUBJECT_ID`) is admitted into hospital multiple times. When summarizing some demographic information, it makes sense to summarize based on unique patients. 
 
-<<<<<<< HEAD
-=======
 **Solution**:
 ```{r}
 admission <- read_csv("/usr/203b-data/mimic-iv/core/admissions.csv.gz",
@@ -479,7 +424,6 @@ admission %>%
 ```
 
 
->>>>>>> develop
 ## Q5. `patient` data
 
 Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients/>) and summarize following variables using appropriate numerics and graphs:  
@@ -487,8 +431,6 @@ Explore `patients.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/core/patients
 - `gender`  
 - `anchor_age` (explain pattern you see)
 
-<<<<<<< HEAD
-=======
 **Solution**: I first check number of unique `subject_id` and found that there are no duplicates.
 ``` {r}
 patient <- read_csv("/usr/203b-data/mimic-iv/core/patients.csv.gz")
@@ -529,395 +471,3 @@ patient %>%
   theme_minimal()
   
 ```
-
->>>>>>> develop
-## Q6. Lab results
-
-`labevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/hosp/labevents/>) contains all laboratory measurements for patients. 
-
-<<<<<<< HEAD
-We are interested in the lab measurements of creatinine, potassium, sodium, chloride, bicarbonate, hematocrit, white blood cell count, glucose, magnesium, calcium, phosphorus, and lactate. Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
-
-## Q7. Vitals from chartered events
-
-We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate.
-
-`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `ITEMID` variable indicates a single measurement type in the database. The `VALUE` variable is the value measured for `ITEMID`. 
-
-`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `ITEMID` in `CHARTEVENTS.csv`. Find potential values of `ITEMID` that correspond to systolic blood pressure, i.e., `LABEL` contains the string `systolic`. 
-=======
-We are interested in the lab measurements of creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), glucose (50931), magnesium (50960), calcium (50893), and lactate (50813). Find the `itemid`s of these lab measurements from `d_labitems.csv.gz` and retrieve a subset of `labevents.csv.gz` only containing these items.
-
-**Solution**:
-
-I would first take a look at first lines of the labevents data.
-```{r eval = F}
-system(str_c("zcat <", shQuote(str_c(mimic_path, "/hosp/labevents.csv.gz")), 
-             "| head"), intern = TRUE)
-
-#read_csv()
-```
-`read_csv()` doesn't work (memory issues) even with selected columns. Thus, I would use data.table instead.
-
-```{r}
-if (!file.exists("labevents_icustays.csv.gz")) {
-#it takes 200 seconds for `fread` to read in labevents.csv.gz#
-  system.time(labevents_tble <-
-    fread(str_c(mimic_path, "/hosp/labevents.csv.gz"),
-            select = c("subject_id", "hadm_id", "itemid", "charttime", "valuenum"),
-            nThread = 4))
-  labevents_tble %>%
-    semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
-    fwrite("labevents_icustays.csv.gz", nThread = 4)
-}
-
-```
-```{r}
-#It takes 18 seconds to read in the smaller data set#
-system.time(labevents_tble <- fread("labevents_icustays.csv.gz"))
-
-```
-
-read in the lab item dictionary
-```{r}
-dlabitems_tble <- read_csv(str_c(mimic_path, "/hosp/d_labitems.csv.gz")) 
-```
-These are lab items that are related to creatinine.
-```{r}
-labitem <- 'Creatinine'
-creatinine_items <- dlabitems_tble %>%
-  filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
-  print(width = Inf)
-```
-
-Next, look for the most frequent lab item related to creatinine:
-```{r}
-labitems <- c("creatinine", "potassium", "sodium", "chloride", 
-              "bicarbonate", "hematocrit", "white blood cell", 
-              "glucose", "magnesium", "calcium", "lactate")
-
-itemids <- rep(0, length(labitems)) 
-i <- 1
-for (labitem in labitems) {
-  print(str_interp("search for ${labitem}"))
-  itemid_list <- dlabitems_tble %>%
-    filter(str_detect(label, regex(labitem, ignore_case = T))) %>%
-    .$itemid
-  itemid <- labevents_tble %>%
-    filter(itemid %in% itemid_list) %>%
-    count(itemid) %>%
-    arrange(desc(n)) %>%
-    slice(1) %>%
-    .$itemid
-  itemids[i] <- itemid
-  i <- i + 1
-}
-```
-
-```{r}
-targetitem <- tibble(itemid = itemids, labitem = labitems) 
-```
-
-Generate a subset of `labevents.csv.gz` only containing the selected labitems. 
-```{r}
-labevents_subset <- labevents_tble %>%
-  inner_join(targetitem, by = "itemid")
-```
-
-```{r eval=F}
-#create a subset of labevents.csv.gz file in the local folder for future use
-write_csv(labevents_subset, "labevents_subset.csv.gz")
-```
-```{r eval=F}
-labevents_subset <- fread("labevents_subset.csv.gz")
-```
-
-## Q7. Vitals from chartered events
-
-We are interested in the vitals for ICU patients: heart rate, mean and systolic blood pressure (invasive and noninvasive measurements combined), body temperature, SpO2, and respiratory rate. Find the `itemid`s of these vitals from `d_items.csv.gz` and retrieve a subset of `chartevents.csv.gz` only containing these items.
-
-`chartevents.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`.
-
-`d_items.csv.gz` (<https://mimic-iv.mit.edu/docs/datasets/icu/d_items/>) is the dictionary for the `itemid` in `chartevents.csv.gz`. 
-
-**Solution**:
-```{r eval=F}
-system(str_c("zcat <", shQuote(str_c(mimic_path, "/icu/chartevents.csv.gz")), 
-             "| head"), intern = TRUE)
-#read_csv()
-```
-
-I first tried the codes below but it did not run successfully due to memory issue. And then I tried to read only one column but still did not work. 
-```{r eval = F}
-if (!file.exists("chartevents_icustays.csv.gz")) {
-  system.time(chartevents_tble <-
-    fread(str_c(mimic_path, "/icu/chartevents.csv.gz"),
-            select = c("subject_id", "hadm_id", "itemid", "charttime", "valuenum"),
-            nThread = 2))
-  chartevents_tble %>%
-    semi_join(icustay, by = c("subject_id", "hadm_id")) %>%
-    fwrite("chartevents_icustays.csv.gz")
-}
-
-```
-
-
-Read the filtered `chartevents` file provided by Dr. Zhou. 
-```{r eval = F}
-system(str_c("zcat <", shQuote("/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz"), 
-             "| head"), intern = TRUE)
-#read_csv()
-```
-```{r}
-#It takes 66 seconds to read the file#
-system.time(chartevents_tble <- fread("/usr/203b-data/mimic-iv-derived-data/chartevents_filtered_itemid.csv.gz",
-                            header = FALSE,
-                            col.names = c("subject_id", 
-                                          "hadm_id",
-                                          "stay_id",
-                                          "charttime",
-                                          "itemid",
-                                          "valuenum"), nThread = 4) %>%
-    as_tibble() %>%
-    mutate_at(c("subject_id", "hadm_id", "stay_id", "itemid"), as.numeric) %>%
-    mutate(charttime = ymd_hms(charttime)))
-```
-
-After merging chartevent_tble to icustay, the number of rows does not change, suggesting that the patients from chartevents are all ICU patients.
-```{r}
-#Merge chartevents_tble and icustay
-chartevents_tble <- chartevents_tble %>%
-    semi_join(icustay, by = c("subject_id", "hadm_id")) 
-#fwrite(chartevents_tble, "chartevents_icustays.csv.gz")
-```
-
-```{r eval=F}
-#Directly read the file created using codes above
-system.time(chartevents_tble <- fread("chartevents_icustays.csv.gz"))
-```
-
-
-Read the the dictionary for the `itemid` in `chartevents.csv.gz`.
-```{r}
-dchartitems_tble <- read_csv(str_c(mimic_path, "/icu/d_items.csv.gz")) 
-```
-
-Filter the selected chart items. 
-```{r}
-for (chartitem in c("heart rate", "Blood Pressure mean", "systolic", 
-                     "temperature", "SpO2", "respiratory rate")) {
-  print(str_interp("search for ${chartitem}"))
-  dchartitems_tble %>%
-    filter(str_detect(label, regex(chartitem, ignore_case = T))) 
-}
-
-```
-
-Let's collect desired chart items and their labels into a tibble.
-
-```{r}
-chartitem_itemid <- dchartitems_tble %>%
-  filter(itemid %in% c(220045, 220052, 220181, 220179, 220050, 
-                       223761, 229862, 220210)) %>%
-  #only keep itemid and label, remove other variables
-  select(itemid, label) %>%
-  print(width = Inf)
-```
-
-Generate a subset of `chartevents.csv.gz` only containing the selected vital items. 
-```{r create-chartevents-subset}
-chartevents_subset <- chartevents_tble %>%
-  inner_join(chartitem_itemid, by = "itemid")
-```
-
-Because the itemid `229862`for `Forehead SpO2 Sensor in Place` cannot be found in the created subset, so I remove this item from `chartitem_itemid`.
-```{r}
-#filter the `229862`for `Forehead SpO2 Sensor in Place`
-chartevents_subset %>%
-  filter(itemid == 229862) 
-```
-```{r}
-chartitem_itemid <- chartitem_itemid %>%
-  slice(1:7) 
-```
-
-
-```{r eval=F}
-#create a subset of chartevents.csv.gz file in the local folder for future use
-fwrite(chartevents_subset, "chartevents_subset.csv.gz")
-```
-
-```{r eval=F}
-#For directly reading the created subset from local folder 
-system.time(chartevents_subset <- fread("chartevents_subset.csv.gz"))
-```
-
->>>>>>> develop
-
-## Q8. Putting things together
-
-Let us create a tibble for all ICU stays, where rows are  
-
-- first ICU stay of each unique patient  
-- adults (age at admission > 18)  
-
-<<<<<<< HEAD
-and columns contains at least following variables  
-
-- all variables in `icustays.csv.gz`  
-- all variables in `admission.csv.gz`  
-=======
-and columns contain at least following variables  
-
-- all variables in `icustays.csv.gz`  
-- all variables in `admission.csv.gz`  
-- all variables in `patients.csv.gz`  
->>>>>>> develop
-- first lab measurements during ICU stay  
-- first vitals measurement during ICU stay  
-- an indicator variable whether the patient died within 30 days of hospital admission  
-
-<<<<<<< HEAD
-=======
-**Solution**：
-First merge `admission`, `patient` datasets to `icustay` and filter the first ICU stay and age > 18.
-```{r merge-data}
-icustays_uniq_tble <- icustay %>%
-  # take first ICU stay of each unique patient
-  group_by(subject_id) %>%
-  filter(rank(intime) == 1) %>%
-  ungroup() %>%
-  #slice_min(intime) %>%
-  #merge admission table
-  left_join(admission, by = c("subject_id", "hadm_id")) %>%
-  #merge patients table
-  left_join(patient, by = "subject_id") %>%
-  # only keep adults age at admission >18
-  mutate(age_at_adm = year(admittime) - anchor_year + anchor_age) %>%
-  filter(age_at_adm >= 18)
-  #print(width = Inf)
-```
-```{r eval=F}
-#create a file in the local folder for future use due to the frequent crashes in R
-fwrite(icustays_uniq_tble, "icustays_uniq_tble.csv.gz")
-```
-```{r eval=F}
-icustays_uniq_tble <- fread("icustays_uniq_tble.csv.gz")
-icustays_uniq_tble %>%
-  as_tibble() 
-```
-
-Merge lab results to icustays_uniq_tble created above
-```{r}
-icustays_uniq_lab <- 
-labevents_subset %>%
-  #only keep subject_id + hadm_id that are in icustays_uniq_tble
-  semi_join(icustays_uniq_tble, by = c("subject_id", "hadm_id")) %>%
-  #pull in the intime of that ICU stay
-  left_join(select(icustays_uniq_tble, subject_id, hadm_id, intime),
-            by = c("subject_id", "hadm_id")) %>%
-  #only keep lab items after ICU intime
-  filter(charttime >= intime) %>%
-  #group by item
-  group_by(subject_id, itemid) %>%
-  #only keep the first chartime for each item
-  #slice_min(charttime, n = 1) %>% #this function does not work
-  #top_n(-1, charttime) %>% #this function takes forever
-  arrange(charttime, .by_group = TRUE) %>%
-  slice_head(n = 1) %>%
-  #do not need charttime and intime anymore
-  select(-charttime, -intime) %>%
-  spread(key = itemid, value = valuenum) %>%
-  #merge with icustays_uniq_tble
-  right_join(icustays_uniq_tble, by = c("subject_id", "hadm_id")) %>%
-  ungroup() %>%
-  #more informative column names
-  rename_at(vars(as.character(targetitem$itemid)), ~targetitem$labitem) 
-
-#head(icustays_uniq_lab)
-```
-
-```{r eval=F}
-#Because R sometimes crashed, I created many files in the local folder for later use
-fwrite(icustays_uniq_lab, "icustays_uniq_lab.csv.gz")
-```
-
-```{r eval=F}
-icustays_uniq_lab <- fread("icustays_uniq_lab.csv.gz")
-```
-
-Merge vital results to the `icustays_uniq_tble` dataset
-```{r}
-icustays_uniq_vital <-
-chartevents_subset %>%
-  #only keep subject_id + hadm_id that are in icustays_uniq_tble
-  semi_join(icustays_uniq_tble, by = c("subject_id", "hadm_id")) %>%
-  #pull in the intime of that ICU stay
-  left_join(select(icustays_uniq_tble, subject_id, hadm_id, intime),
-            by = c("subject_id", "hadm_id")) %>%
-  #only keep lab items after ICU intime
-  filter(charttime >= intime) %>%
-  #group by item
-  group_by(subject_id, itemid) %>%
-  #only keep the first charttime for each item
-  arrange(charttime, .by_group = TRUE) %>%
-  slice_head(n = 1) %>%
-  #do not need charttime and intime anymore
-  select(-charttime, -intime) %>%
-  spread(key = itemid, value = valuenum) %>%
-  #merge with icustays_uniq_tble
-  right_join(icustays_uniq_tble, by = c("subject_id", "hadm_id", "stay_id")) %>%
-  ungroup() %>%
-  #more informative column names
-  rename_at(vars(as.character(chartitem_itemid$itemid)), ~chartitem_itemid$label) 
-
-#head(icustays_uniq_vital)
-```
-```{r eval=F}
-#create a file in the local folder for future use
-fwrite(icustays_uniq_vital, "icustays_uniq_vital.csv.gz")
-```
-```{r eval=F}
-icustays_uniq_vital <- fread("icustays_uniq_vital.csv.gz")
-icustays_uniq_vital %>%
-  as_tibble() %>%
-  print(width = Inf)
-```
-
-Merge `icustays_uniq_lab` and `icustays_uniq_vital`.
-```{r}
-icustays_uniq <- icustays_uniq_vital %>%
-  full_join(icustays_uniq_lab, by = c("subject_id", "hadm_id", "stay_id",
-                  "first_careunit", "last_careunit", "intime", "outtime", "los", 
-                  "admittime", "dischtime", "deathtime", "admission_type", 
-                  "admission_location", "discharge_location", "insurance",
-                  "language", "marital_status", "ethnicity", "edregtime", 
-                  "edouttime", "hospital_expire_flag", "gender", "anchor_age",
-                  "anchor_year", "anchor_year_group", "dod", "age_at_adm")) 
-#head(icustays_uniq)
-```
-```{r eval =F}
-fwrite(icustays_uniq, "icustays_uniq_combined.csv.gz")
-```
-```{r eval =F}
-system.time(icustays_uniq <- fread("icustays_uniq_combined.csv.gz"))
-```
-
-Add an indicator variable to show whether the patient died within 30 days of hospital admission. TRUE means the patients died within 30 days of admission, FALSE means the patients died after 30 days of admission, NA means the patients did not die during their hospitalization so lack of data for death. Here is the final tibble that include all the required variables.
-```{r}
-icustays_uniq <- icustays_uniq %>%
-  #create a new variable `after_admtime` which is 30 days after admission
-  mutate(after_admtime = admittime + days(30) ) %>%
-  #create a new logical variable that indicates the death within 30 days after admission or not 
-  mutate(death_within_mon = ifelse(deathtime <= after_admtime, 
-                                   "TRUE", ifelse(deathtime > after_admtime, "FALSE", NA ))) %>%
-  #no need to keep the created variable: 30 days after admission time
-  select(-after_admtime) 
-
-head(icustays_uniq)
-```
-
-
-
-
->>>>>>> develop
