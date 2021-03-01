@@ -156,7 +156,8 @@ icustays_tble %>%
     "TRUE", ifelse(deathtime > after_admtime, "FALSE", NA ))) %>%
   #no need to keep the created variable: 30 days after admission time
   select(-after_admtime) %>%
-  saveRDS("mimiciv_shiny/icu_cohort.rds")
+  print(width = Inf)
+  #saveRDS("mimiciv_shiny/icu_cohort.rds") 
 ```
 
 

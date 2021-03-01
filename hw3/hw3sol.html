@@ -849,7 +849,7 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
     &quot;TRUE&quot;, ifelse(deathtime &gt; after_admtime, &quot;FALSE&quot;, NA ))) %&gt;%
   #no need to keep the created variable: 30 days after admission time
   select(-after_admtime) %&gt;%
-  saveRDS(&quot;mimiciv_shiny/icu_cohort.rds&quot;)</code></pre>
+  print(width = Inf)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT &quot;LHS&quot;.&quot;subject_id&quot; AS &quot;subject_id&quot;, &quot;LHS&quot;.&quot;hadm_id&quot; AS &quot;hadm_id&quot;, &quot;LHS&quot;.&quot;stay_id&quot; AS &quot;stay_id&quot;, &quot;first_careunit&quot;, &quot;last_careunit&quot;, &quot;intime&quot;, &quot;outtime&quot;, &quot;los&quot;, &quot;admittime&quot;, &quot;dischtime&quot;, &quot;deathtime&quot;, &quot;admission_type&quot;, &quot;admission_location&quot;, &quot;discharge_location&quot;, &quot;insurance&quot;, &quot;language&quot;, &quot;marital_status&quot;, &quot;ethnicity&quot;, &quot;edregtime&quot;, &quot;edouttime&quot;, &quot;hospital_expire_flag&quot;, &quot;gender&quot;, &quot;anchor_age&quot;, &quot;anchor_year&quot;, &quot;anchor_year_group&quot;, &quot;dod&quot;, &quot;age_at_adm&quot;, &quot;bicarbonate&quot;, &quot;calcium&quot;, &quot;chloride&quot;, &quot;creatinine&quot;, &quot;glucose&quot;, &quot;magnesium&quot;, &quot;potassium&quot;, &quot;sodium&quot;, &quot;hematocrit&quot;, &quot;wbc&quot;, &quot;lactate&quot;, &quot;heart_rate&quot;, &quot;non_invasive_blood_pressure_systolic&quot;, &quot;non_invasive_blood_pressure_mean&quot;, &quot;respiratory_rate&quot;, &quot;temperature_fahrenheit&quot;, &quot;arterial_blood_pressure_systolic&quot;, &quot;arterial_blood_pressure_mean&quot;
 ## FROM (SELECT &quot;LHS&quot;.&quot;subject_id&quot; AS &quot;subject_id&quot;, &quot;LHS&quot;.&quot;hadm_id&quot; AS &quot;hadm_id&quot;, &quot;stay_id&quot;, &quot;first_careunit&quot;, &quot;last_careunit&quot;, &quot;intime&quot;, &quot;outtime&quot;, &quot;los&quot;, &quot;admittime&quot;, &quot;dischtime&quot;, &quot;deathtime&quot;, &quot;admission_type&quot;, &quot;admission_location&quot;, &quot;discharge_location&quot;, &quot;insurance&quot;, &quot;language&quot;, &quot;marital_status&quot;, &quot;ethnicity&quot;, &quot;edregtime&quot;, &quot;edouttime&quot;, &quot;hospital_expire_flag&quot;, &quot;gender&quot;, &quot;anchor_age&quot;, &quot;anchor_year&quot;, &quot;anchor_year_group&quot;, &quot;dod&quot;, &quot;age_at_adm&quot;, &quot;bicarbonate&quot;, &quot;calcium&quot;, &quot;chloride&quot;, &quot;creatinine&quot;, &quot;glucose&quot;, &quot;magnesium&quot;, &quot;potassium&quot;, &quot;sodium&quot;, &quot;hematocrit&quot;, &quot;wbc&quot;, &quot;lactate&quot;
@@ -878,6 +878,165 @@ if (!dir.exists(&quot;mimiciv_shiny&quot;)) {
 ## ℹ Input `after_admtime` is `admittime + days(30)`.</code></pre>
 <pre><code>## Warning in system(&quot;timedatectl&quot;, intern = TRUE): running command &#39;timedatectl&#39;
 ## had status 1</code></pre>
+<pre><code>## # A tibble: 49,377 x 46
+##    subject_id  hadm_id  stay_id first_careunit                                 
+##         &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;                                          
+##  1   10000032 29079034 37529680 Medical Intensive Care Unit (MICU)             
+##  2   10000980 26913865 36742749 Medical Intensive Care Unit (MICU)             
+##  3   10002013 23581541 37106138 Cardiac Vascular Intensive Care Unit (CVICU)   
+##  4   10002428 28662225 31956612 Medical Intensive Care Unit (MICU)             
+##  5   10002443 21329021 35217462 Coronary Care Unit (CCU)                       
+##  6   10002760 28094813 36410867 Cardiac Vascular Intensive Care Unit (CVICU)   
+##  7   10003400 20214994 38355205 PACU                                           
+##  8   10004235 24181354 30276431 Coronary Care Unit (CCU)                       
+##  9   10004422 21255400 39826382 Cardiac Vascular Intensive Care Unit (CVICU)   
+## 10   10004606 29242151 32639376 Neuro Surgical Intensive Care Unit (Neuro SICU)
+##    last_careunit                                    intime             
+##    &lt;chr&gt;                                            &lt;dttm&gt;             
+##  1 Medical Intensive Care Unit (MICU)               2180-07-23 14:00:00
+##  2 Medical Intensive Care Unit (MICU)               2189-06-27 08:42:00
+##  3 Cardiac Vascular Intensive Care Unit (CVICU)     2160-05-18 10:00:53
+##  4 Medical Intensive Care Unit (MICU)               2156-04-12 16:24:18
+##  5 Coronary Care Unit (CCU)                         2183-10-18 00:47:00
+##  6 Cardiac Vascular Intensive Care Unit (CVICU)     2141-04-20 13:20:46
+##  7 Medical/Surgical Intensive Care Unit (MICU/SICU) 2137-02-25 19:43:32
+##  8 Medical Intensive Care Unit (MICU)               2196-02-24 17:07:00
+##  9 Cardiac Vascular Intensive Care Unit (CVICU)     2111-01-17 09:44:50
+## 10 Neuro Surgical Intensive Care Unit (Neuro SICU)  2159-02-20 16:28:04
+##    outtime                los admittime           dischtime          
+##    &lt;dttm&gt;               &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;             
+##  1 2180-07-23 23:50:47  0.410 2180-07-23 12:35:00 2180-07-25 17:55:00
+##  2 2189-06-27 20:38:27  0.498 2189-06-27 07:38:00 2189-07-03 03:00:00
+##  3 2160-05-19 17:33:33  1.31  2160-05-18 07:45:00 2160-05-23 13:30:00
+##  4 2156-04-19 18:13:35  7.08  2156-04-12 14:16:00 2156-04-29 16:26:00
+##  5 2183-10-20 18:48:03  2.75  2183-10-17 23:20:00 2183-10-20 18:47:00
+##  6 2141-04-21 14:26:49  1.05  2141-04-20 07:15:00 2141-04-24 13:31:00
+##  7 2137-03-10 21:29:36 13.1   2137-02-24 10:00:00 2137-03-19 15:45:00
+##  8 2196-02-29 15:58:02  4.95  2196-02-24 14:38:00 2196-03-04 14:02:00
+##  9 2111-01-23 18:18:46  6.36  2111-01-15 14:55:00 2111-01-25 15:00:00
+## 10 2159-02-25 20:09:14  5.15  2159-02-20 13:43:00 2159-03-06 16:51:00
+##    deathtime           admission_type             
+##    &lt;dttm&gt;              &lt;chr&gt;                      
+##  1 NA                  EW EMER.                   
+##  2 NA                  EW EMER.                   
+##  3 NA                  SURGICAL SAME DAY ADMISSION
+##  4 NA                  EW EMER.                   
+##  5 NA                  EW EMER.                   
+##  6 NA                  SURGICAL SAME DAY ADMISSION
+##  7 NA                  URGENT                     
+##  8 NA                  URGENT                     
+##  9 NA                  EW EMER.                   
+## 10 NA                  OBSERVATION ADMIT          
+##    admission_location                     discharge_location           insurance
+##    &lt;chr&gt;                                  &lt;chr&gt;                        &lt;chr&gt;    
+##  1 EMERGENCY ROOM                         HOME                         Medicaid 
+##  2 EMERGENCY ROOM                         HOME HEALTH CARE             Medicare 
+##  3 PHYSICIAN REFERRAL                     HOME HEALTH CARE             Medicare 
+##  4 EMERGENCY ROOM                         SKILLED NURSING FACILITY     Medicare 
+##  5 TRANSFER FROM HOSPITAL                 HOME                         Other    
+##  6 PHYSICIAN REFERRAL                     HOME HEALTH CARE             Other    
+##  7 TRANSFER FROM SKILLED NURSING FACILITY CHRONIC/LONG TERM ACUTE CARE Medicare 
+##  8 TRANSFER FROM HOSPITAL                 SKILLED NURSING FACILITY     Medicaid 
+##  9 PROCEDURE SITE                         HOME HEALTH CARE             Medicare 
+## 10 EMERGENCY ROOM                         HOME                         Other    
+##    language marital_status ethnicity              edregtime          
+##    &lt;chr&gt;    &lt;chr&gt;          &lt;chr&gt;                  &lt;dttm&gt;             
+##  1 ENGLISH  WIDOWED        WHITE                  2180-07-23 05:54:00
+##  2 ENGLISH  MARRIED        BLACK/AFRICAN AMERICAN 2189-06-27 06:25:00
+##  3 ENGLISH  SINGLE         OTHER                  NA                 
+##  4 ENGLISH  WIDOWED        WHITE                  2156-04-12 09:56:00
+##  5 ENGLISH  SINGLE         WHITE                  2183-10-17 22:11:00
+##  6 ENGLISH  &lt;NA&gt;           UNABLE TO OBTAIN       NA                 
+##  7 ENGLISH  MARRIED        BLACK/AFRICAN AMERICAN NA                 
+##  8 ENGLISH  SINGLE         BLACK/AFRICAN AMERICAN 2196-02-24 12:15:00
+##  9 ENGLISH  WIDOWED        WHITE                  NA                 
+## 10 ENGLISH  WIDOWED        WHITE                  2159-02-20 11:32:00
+##    edouttime           hospital_expire_flag gender anchor_age anchor_year
+##    &lt;dttm&gt;                             &lt;int&gt; &lt;chr&gt;       &lt;int&gt;       &lt;int&gt;
+##  1 2180-07-23 14:00:00                    0 F              52        2180
+##  2 2189-06-27 08:42:00                    0 F              73        2186
+##  3 NA                                     0 F              53        2156
+##  4 2156-04-12 17:11:00                    0 F              80        2155
+##  5 2183-10-18 00:47:00                    0 M              53        2183
+##  6 NA                                     0 M              56        2141
+##  7 NA                                     0 F              72        2134
+##  8 2196-02-24 17:07:00                    0 M              47        2196
+##  9 NA                                     0 M              78        2111
+## 10 2159-02-20 17:50:00                    0 F              64        2159
+##    anchor_year_group dod        age_at_adm bicarbonate calcium chloride
+##    &lt;chr&gt;             &lt;date&gt;          &lt;dbl&gt;       &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+##  1 2014 - 2016       NA                 52          21     9.3      102
+##  2 2008 - 2010       NA                 76          23     9.2      103
+##  3 2008 - 2010       NA                 57          23    NA        109
+##  4 2011 - 2013       NA                 81          20     7.4       98
+##  5 2017 - 2019       NA                 53          20     7.6      101
+##  6 2008 - 2010       NA                 56          25    NA        116
+##  7 2011 - 2013       NA                 75          15     7.6      112
+##  8 2014 - 2016       NA                 47          14     6.8       96
+##  9 2011 - 2013       NA                 78          24     7.9      110
+## 10 2017 - 2019       NA                 64          20     9.6       98
+##    creatinine glucose magnesium potassium sodium hematocrit   wbc lactate
+##         &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;
+##  1        0.5     115       2.3       4.7    132       34.8   4.1    NA  
+##  2        2.2     144       2         4.2    139       30.8   5.4    NA  
+##  3        1.1      98       2.1       4      140       28.6  18.2     3.3
+##  4        0.8      99       1.4       3.9    129       28.7  22.4     1.6
+##  5        0.8     226       1.6       5.2    133       43.4  20.7     1.7
+##  6        0.9      99       2.2       5      142       28    16       3.1
+##  7        0.6     137       1.5       4.4    139       22.1   4.3     6.8
+##  8        7.9     425       2.3       4.3    132       36.2  21.6     3.1
+##  9        0.7     144       2.8       4.3    140       23.2  11.3     2.8
+## 10        0.9     135       1.7       4      138       37.3  14.1     1  
+##    heart_rate non_invasive_blood_pressure_systolic
+##         &lt;dbl&gt;                                &lt;dbl&gt;
+##  1         91                                   84
+##  2         77                                  150
+##  3         80                                  104
+##  4        124                                   87
+##  5         81                                  136
+##  6         97                                  102
+##  7        113                                   58
+##  8        144                                   99
+##  9         80                                  119
+## 10        107                                  169
+##    non_invasive_blood_pressure_mean respiratory_rate temperature_fahrenheit
+##                               &lt;dbl&gt;            &lt;dbl&gt;                  &lt;dbl&gt;
+##  1                               56               24                   98.7
+##  2                               92               23                   98  
+##  3                               77               14                   97.2
+##  4                               53               25                  103. 
+##  5                               99               23                   96.7
+##  6                               69               16                   97.5
+##  7                               27               15                   95.6
+##  8                               74               25                   98.5
+##  9                               85               12                   98.4
+## 10                              102               15                   99.6
+##    arterial_blood_pressure_systolic arterial_blood_pressure_mean
+##                               &lt;dbl&gt;                        &lt;dbl&gt;
+##  1                               NA                           NA
+##  2                               NA                           NA
+##  3                              134                           94
+##  4                               NA                           NA
+##  5                               NA                           NA
+##  6                               96                           72
+##  7                              104                           77
+##  8                              123                           93
+##  9                              105                           70
+## 10                              147                           76
+##    death_within_mon
+##    &lt;chr&gt;           
+##  1 &lt;NA&gt;            
+##  2 &lt;NA&gt;            
+##  3 &lt;NA&gt;            
+##  4 &lt;NA&gt;            
+##  5 &lt;NA&gt;            
+##  6 &lt;NA&gt;            
+##  7 &lt;NA&gt;            
+##  8 &lt;NA&gt;            
+##  9 &lt;NA&gt;            
+## 10 &lt;NA&gt;            
+## # … with 49,367 more rows</code></pre>
+<pre class="r"><code>  #saveRDS(&quot;mimiciv_shiny/icu_cohort.rds&quot;) </code></pre>
 <p>Close database connection and clear workspace.</p>
 <pre class="r"><code>dbDisconnect(con)</code></pre>
 <pre><code>## [1] TRUE</code></pre>
