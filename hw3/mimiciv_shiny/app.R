@@ -50,8 +50,11 @@ ui <- fluidPage(
                      
                  ),
             mainPanel(
+                h4(helpText("Statistic summary:")),
                 verbatimTextOutput("labsummary"),
+                h4(helpText("Box plot:")),
                 plotOutput("BoxPlot1"),
+                h4(helpText("Histogram:")),
                 plotOutput("labHist"))
        )
     ),
@@ -76,9 +79,12 @@ ui <- fluidPage(
                               value = 30)   
                  ),
               mainPanel(
-                  verbatimTextOutput("vsummary"),
-                  plotOutput("BoxPlot2"),
-                  plotOutput("vitalHist")
+                h4(helpText("Statistic summary:")),  
+                verbatimTextOutput("vsummary"),
+                h4(helpText("Box plot:")),
+                plotOutput("BoxPlot2"),
+                h4(helpText("Histogram:")),
+                plotOutput("vitalHist")
               )
                 )
     ),
@@ -119,7 +125,8 @@ d <- reactive({
     output$plot <- renderPlot({
         ggplot() +
             geom_bar(mapping = aes(x = d(), fill =d() )) +
-            labs(x= input$dem, y = "Count")
+            labs(x= input$dem, y = "Count") +
+            theme_minimal()
     })    
     output$summary <- renderPrint({
     summary(d())
