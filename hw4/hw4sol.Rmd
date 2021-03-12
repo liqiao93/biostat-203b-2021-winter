@@ -1,0 +1,156 @@
+---
+title: "Biostat 203B Homework 4 Solution"
+subtitle: Due Mar 19 @ 11:59PM
+author: "Liqiao (Vicky) Li"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+  # ioslides_presentation: default
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+                      
+Display machine information:
+```{r}
+sessionInfo()
+```
+Load database libraries and the tidyverse frontend:
+```{r}
+library(tidyverse)
+library(lubridate)
+library(miceRanger)
+library(data.table)
+```
+
+## Q1. Missing data
+
+Through the Shiny app developed in HW3, we observe abundant missing values in the MIMIC-IV ICU cohort we created. In this question, we use multiple imputation to obtain a data set without missing values.
+
+0. Read following tutorials on the R package miceRanger for imputation: <https://github.com/farrellday/miceRanger>, <https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html>.
+
+    A more thorough book treatment of the practical imputation strategies is the book [*_Flexible Imputation of Missing Data_*](https://stefvanbuuren.name/fimd/) by Stef van Buuren. 
+
+1. Explain the jargon MCAR, MAR, and MNAR.  
+**Solution**:  
+- MCAR: Short for "missing completely at random". MCAR means the probability of being missing is the same for all data. This term can tell that the causes of the missing data are not related to the data itself. The missing data are just a random subset of the data. In this case, analysis using this type of data will not be biased but may have lower power.
+- MAR: Short for "missing at random". MAR occurs when there are systematic differences between the missing and observed data. It means the propensity for a data point to be missing is not related to the missing data but related to some of the observed data. For example, a case where we observe women are more likely 
+- MNAR:Short for "missing not at random". MNAR is data that is neither MCAR nor MAR. MNAR means that the probability of being missing varies for some unknown reasons.In other words, there is a relationship between the propensity of a value to be missing and its values. For example, people with the lowest education tend to have missing data on education but we may fail to note this.
+
+
+2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.
+**Solution**:  
+MICE is a multiple imputation method that can deal with missing data in datasets under certain assumptions. MICE imputes the missing values through an iterative regression process for each created copy. Let's say we have three variables: A, B, and C. First, we replace the missing values in all variables with a derived value from non-missing values available for that variable (e.g., use the mean value of that variable). Second, we set back to missing the derived values for A variable only. Next, we regress A on B and C via a linear regression model. This way, A is the dependent variable and B,C are the independent variables. Lastly, we use the fitted regression model to predict the missing A values. The process is repeated for each variable that has missing data.At the end of the iterations, all the missing values in all variables will be replaced with predictions from regression models.
+
+3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
+**Solution**:  
+```{r}
+icu <- readRDS("icu_cohort.rds") 
+
+#modify variable "death_within_mon": NA indicates that the patient is not dead, so I replace NA with FALSE
+icu <- icu %>%
+  replace_na(list(death_within_mon = "FALSE"))
+
+missing_values <- icu %>%
+  as_tibble() %>%
+  select(everything()) %>%
+  summarise_all(funs(sum(is.na(.)))) %>% 
+  sort() %>%
+  print(width = Inf)
+```
+Variables that have >5000 `NA`s include: edregtime, edouttime, lactate, arterial_blood_pressure_mean, arterial_blood_pressure_systolic, deathtime, and dod. However, NAs for dod and deathtime are meaningful, indicating that the patient is not dead so I will keep them for now and discard the others.  
+```{r}
+#drop the unqualified variables
+icu <- icu %>%
+  as_tibble() %>%
+  select(-c("edregtime","edouttime", "lactate", 
+            "arterial_blood_pressure_mean", 
+            "arterial_blood_pressure_systolic")) 
+```
+Then I will replace the apparent data entry errors by `NA`s. I determine the outliers based on the plot observations in the Shiny app created in hw3. All observations that lie outside the common sense range are considered as potential outliers in the ICU cohort dataset. 
+
+```{r}
+#clean the icu data#
+icu <- icu %>%
+  as_tibble() %>%
+  #replace obvious outliers in vitals with NA
+  mutate(heart_rate = replace(
+    heart_rate, heart_rate< 30 |heart_rate> 250, NA)) %>%
+  mutate(
+    non_invasive_blood_pressure_systolic = replace(
+      non_invasive_blood_pressure_systolic, 
+        non_invasive_blood_pressure_systolic > 500|non_invasive_blood_pressure_systolic < 20, NA)) %>%
+  mutate(
+    non_invasive_blood_pressure_mean = 
+           replace(non_invasive_blood_pressure_mean, 
+                   non_invasive_blood_pressure_mean > 500 |non_invasive_blood_pressure_mean < 20, NA)) %>%
+  mutate(
+    respiratory_rate = replace(
+             respiratory_rate, respiratory_rate <2 | respiratory_rate > 150, NA)) %>%
+  mutate(temperature_fahrenheit = replace(
+      temperature_fahrenheit, temperature_fahrenheit <75, NA)) %>%
+  #replace obvious outliers in lab measurements with NA
+  mutate(calcium = replace(
+    calcium, calcium >20|calcium == 0, NA)) %>%
+  mutate(glucose = replace(
+    glucose, glucose >2000, NA)) %>%
+  mutate(magnesium = replace(
+    magnesium,magnesium > 10, NA)) %>%
+  mutate(wbc = replace(
+    wbc, wbc ==0 | wbc > 400, NA)) %>%
+  #drop some variables that will not be used in Q2
+  select(-c("last_careunit", "intime", "los",
+        "outtime","admittime", "dischtime", 
+        "deathtime", "admission_location", "hospital_expire_flag",
+        "discharge_location", "insurance", "dod", 
+        "anchor_year", "anchor_year_group", "age_at_adm")) %>%
+  #add a new variable age_squared
+  mutate(age_squared = anchor_age^2) %>%
+  print(width = Inf)
+```
+
+
+4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
+
+```{r eval=F}
+#it takes 78 min to run the code below#
+system.time(
+ mice_icu <- miceRanger(
+      icu,
+      m=3,
+      returnModels = TRUE,
+      verbose=FALSE,
+      max.depth = 10
+  )
+)
+```
+
+```{r eval=F}
+#save the imputation results as a file#
+#saveRDS(mice_icu, "mice_icu.rds")
+
+#mice_icu <- readRDS("mice_icu.rds")
+```
+5. Make imputation diagnostic plots and explain what they mean.
+
+```{r}
+#read the saved file created in Q1.4#
+mice_icu <- readRDS("mice_icu.rds")
+plotDistributions(mice_icu,vars='allNumeric')
+plotModelError(mice_icu,vars='allNumeric')
+```
+
+
+6. Obtain a complete data set by averaging the 3 imputed data sets.
+
+## Q2. Predicting 30-day mortality
+
+Develop at least two analytic approaches for predicting the 30-day mortality of patients admitted to ICU using demographic information (gender, age, marital status, ethnicity), first lab measurements during ICU stay, and first vital measurements during ICU stay. For example, you can use (1) logistic regression (`glm()` function), (2) logistic regression with lasso penalty (glmnet package), (3) random forest (randomForest package), or (4) neural network.
+
+1. Partition data into 80% training set and 20% test set. Stratify partitioning according the 30-day mortality status.
+
+2. Train the models using the training set.
+
+3. Compare model prediction performance on the test set.
