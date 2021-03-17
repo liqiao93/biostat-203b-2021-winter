@@ -10,7 +10,8 @@ output:
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, 
+                      error = TRUE, cache.lazy = FALSE)
 ```
                       
 Display machine information:
@@ -23,6 +24,7 @@ library(tidyverse)
 library(lubridate)
 library(miceRanger)
 library(data.table)
+library(mice)
 ```
 
 ## Q1. Missing data
@@ -42,7 +44,7 @@ Through the Shiny app developed in HW3, we observe abundant missing values in th
 
 2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.
 **Solution**:  
-MICE is a multiple imputation method that can deal with missing data in datasets under certain assumptions. MICE imputes the missing values through an iterative regression process for each created copy. Let's say we have three variables: A, B, and C. First, we replace the missing values in all variables with a derived value from non-missing values available for that variable (e.g., use the mean value of that variable). Second, we set back to missing the derived values for A variable only. Next, we regress A on B and C via a linear regression model. This way, A is the dependent variable and B,C are the independent variables. Lastly, we use the fitted regression model to predict the missing A values. The process is repeated for each variable that has missing data.At the end of the iterations, all the missing values in all variables will be replaced with predictions from regression models.
+MICE is a multiple imputation method that can deal with missing data in datasets under certain assumptions. MICE imputes the missing values through an iterative regression process for each created copy. Let's say we have three variables: A, B, and C. First, we replace the missing values in all variables with a derived value from non-missing values available for that variable (e.g., use the mean value of that variable). Second, we set back to missing the derived values for variable A only. Next, we regress A on B and C via a linear regression model. This way, A is the dependent variable and B,C are the independent variables. Lastly, we use the fitted regression model to predict the missing A values. The process is repeated for each variable that has missing data.At the end of the iterations, all the missing values in all variables will be replaced with predictions from regression models.
 
 3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
 **Solution**:  
@@ -113,7 +115,7 @@ icu <- icu %>%
 
 
 4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
-
+**Solution**: 
 ```{r eval=F}
 #it takes 78 min to run the code below#
 system.time(
@@ -130,27 +132,68 @@ system.time(
 ```{r eval=F}
 #save the imputation results as a file#
 #saveRDS(mice_icu, "mice_icu.rds")
-
-#mice_icu <- readRDS("mice_icu.rds")
+mice_icu <- readRDS("mice_icu.rds")
 ```
 5. Make imputation diagnostic plots and explain what they mean.
-
+**Solution**: 
 ```{r}
 #read the saved file created in Q1.4#
 mice_icu <- readRDS("mice_icu.rds")
-plotDistributions(mice_icu,vars='allNumeric')
+#Generate imputation diagnostic plots#
+plotDistributions(mice_icu,vars= 'allNumeric')
+```
+
+The red line is the density of the original data and the black lines represent the imputed data. The red lines match well with the imputed lines for most variables except for heart_rate showing more noises.
+
+```{r}
 plotModelError(mice_icu,vars='allNumeric')
 ```
 
-
+```{r}
+plotCorrelations(mice_icu,vars='allNumeric')
+```
 6. Obtain a complete data set by averaging the 3 imputed data sets.
+**Solution**: 
+```{r}
+dataList <- completeData(mice_icu)
+head(dataList[[1]],10)
+```
+
+
+```{r}
+ave <- rbindlist(dataList, use.names=TRUE)[,lapply(.SD, mean), by = list(
+  subject_id, hadm_id, stay_id,
+  first_careunit, admission_type, 
+  language, marital_status, ethnicity,
+  gender,death_within_mon)] 
+
+```
+
 
 ## Q2. Predicting 30-day mortality
 
 Develop at least two analytic approaches for predicting the 30-day mortality of patients admitted to ICU using demographic information (gender, age, marital status, ethnicity), first lab measurements during ICU stay, and first vital measurements during ICU stay. For example, you can use (1) logistic regression (`glm()` function), (2) logistic regression with lasso penalty (glmnet package), (3) random forest (randomForest package), or (4) neural network.
 
 1. Partition data into 80% training set and 20% test set. Stratify partitioning according the 30-day mortality status.
-
 2. Train the models using the training set.
+3. Compare model prediction performance on the test set.  
 
-3. Compare model prediction performance on the test set.
+**Solution**: 
+I will use logistic regression and neural network to perform the analysis.  
+
+###(1) Logistic regression 
+First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, first lab measurements, and first vital measurements as the covariates. A root mean squared error (RMSE) is calculated to measure performance. 
+```{r}
+icu1 <- ave
+#partition data into 80% training set and 20% test set 
+smp_size <- floor(0.80 * nrow(icu1))
+train_ind <- sample(seq_len(nrow(icu1)), size = smp_size)
+train <- icu1[train_ind, ]
+test <- icu1[-train_ind, ]
+#convert character variables into factors
+```
+
+
+###(2) Neural network
+
+
