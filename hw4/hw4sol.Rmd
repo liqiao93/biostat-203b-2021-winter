@@ -132,10 +132,9 @@ system.time(
 )
 ```
 
-```{r eval=F}
+```{r eval = F}
 #save the imputation results as a file#
-#saveRDS(mice_icu, "mice_icu.rds")
-mice_icu <- readRDS("mice_icu.rds")
+saveRDS(mice_icu, "mice_icu.rds")
 ```
 5. Make imputation diagnostic plots and explain what they mean.
 **Solution**: 
@@ -143,19 +142,17 @@ mice_icu <- readRDS("mice_icu.rds")
 #read the saved file created in Q1.4#
 mice_icu <- readRDS("mice_icu.rds")
 #Generate imputation diagnostic plots#
+#Distribution of Imputed Values#
 plotDistributions(mice_icu,vars= 'allNumeric')
-```
-
-The red line is the density of the original data and the black lines represent the imputed data. The red lines match well with the imputed lines for most variables except for heart_rate showing more noises.
-
-```{r}
+#Center and Dispersion COnvergence#
+plotVarConvergence(mice_icu,vars='allNumeric')
+#Model OOB Error#
 plotModelError(mice_icu,vars='allNumeric')
 ```
-It is not converged yet. Ideally, we need to have more iterations. However, it has already been busy for the system to run with 5 iterations. 
 
-```{r}
-plotCorrelations(mice_icu,vars='allNumeric')
-```
+The red line is the density of the original data and the black lines represent the imputed data in the first distribution plot. The red lines match well with the imputed lines for most variables except for heart_rate showing more noises. Each model shows the OOB accuracy for classification and r-squared for regression. Based on the OOB Error plots, we can see that most variables do not have a good accuracy. In sum, the imputed data are not converged yet. Ideally, we need to have more iterations. However, it has already been busy for the system to run with 5 iterations. 
+
+
 6. Obtain a complete data set by averaging the 3 imputed data sets.
 **Solution**: 
 ```{r}
@@ -201,9 +198,6 @@ mod3 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
 #combine the three datasets and take average
 new_list <- list(mod1, mod2, mod3)
 ave_icu <- reduce(new_list, `+`)/length(new_list)
-
-#ave_icu <- rbindlist(new_list, use.names=TRUE)[,lapply(.SD, mean)] 
-
 ```
 
 
@@ -224,7 +218,7 @@ First prepare the data for analysis. A logistic regression will be performed on 
 #convert the averaged matrix into data.frame
 icu_final1 <- as.data.frame(ave_icu)
 
-#partition data into 80% training set and 20% test set 
+#partition data into 80% training set and 20% test set according to the 30-day mortality status
 set.seed(12345)
 inds <- partition(icu_final1$death_within_monTRUE, p =c(train = 0.8, test = 0.2))
 str(inds)
@@ -235,32 +229,36 @@ test <- icu_final1[inds$test, ]
 logit <- glm(death_within_monTRUE ~ . - (death_within_monTRUE),
             data = train, family = binomial)
 summary(logit)
-
-#predict the 30-day mortality of ICU patients using the training set
-mortality_pre <- predict(logit, test, type = "response")
 ```
+
 
 ```{r}
-#Calculate RMSE to evaluate results
-library(Metrics)
-RMSE_result <- 
-  rmse(test$death_within_monTRUE, mortality_pre) %>%
+#predict the 30-day mortality of ICU patients 
+pred <- predict(logit, test, type = "response")
+
+#create a dataframe of observed and predicted data
+library(yardstick)
+predicted <- round(pred)
+tab <- table(Predicted = predicted, Reference = test$death_within_monTRUE)
+tab
+
+
+#calculate the accuracy
+act_pred <- data.frame(observed = factor(test$death_within_monTRUE), predicted = 
+                      factor(predicted))
+accuracy_est <- accuracy(act_pred, observed, predicted) %>%
   print()
-
 ```
-
+The coefficient table shows that age, ethnicity`Unable to obtain` and unknown, first careunits including CCU, MICU, MICU/SICU, Medicine, Neuro SICU, SICU, and TSICU, all lab measurements, and vital measurements including heart_rate, non_invasive_blood_pressure_systolic, respiratory_rate, and temperature, have significant influence on the 30-day mortality (p-value < 0.05). The accuracy of the logistic regression model is estimated as 0.9099.
 
 ###(2) Neural network
 Define a sequential model (a linear stack of layers) with 2 fully-connected hidden layers (50 and 25 neurons).
 ```{r}
 library(keras)
 install_keras()
-
 ```
 ```{r}
 library(tensorflow)
-library(reticulate)
-#install_tensorflow()
 #prepare data and use the partitioned data
 x_train <- as.matrix(train[,3:49])
 y_train <- as.matrix(train[,2]) 
@@ -276,9 +274,10 @@ dim(y_test)
 ```{r}
 #define the model
 model <- keras_model_sequential()
-
+```
+```{r}
 model %>%
-  layer_dense(units = 50, activation = 'relu', input_shape = c(5)) %>%
+  layer_dense(units = 50, activation = 'relu', input_shape = c(47)) %>%
   layer_dropout(rate= 0.4) %>%
   layer_dense(units = 25, activation = 'relu') %>%
   layer_dropout(rate = 0.3) %>%
@@ -297,11 +296,12 @@ model %>% compile(
 
 ```
 ```{r}
-#training and validation
+#train the model
+#it takes about 28 seconds
 system.time({
 history <- model %>% fit(
   x_train, y_train, 
-  epochs = 20, batch_size = 20, 
+  epochs = 10, batch_size = 25, 
   validation_split = 0.2
 )
 })
@@ -310,11 +310,11 @@ history <- model %>% fit(
 plot(history)
 ```
 
-```{r eval=F}
+```{r}
 #evaluate model performance and test data
 model %>% evaluate(x_test, y_test)
-
-#generate predictions
-model %>% predict_classes(x_test)
-
 ```
+
+I have tried different parameters of the model and achieved the loss of 0.29 and accuracy of 0.9076.
+
+Overall, both logistic regression and neural network models result in a good prediction accuracy that is about 0.91. The accuracy of the logistic regression model is only slightly higher than neural network. 
