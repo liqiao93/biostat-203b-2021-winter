@@ -1,0 +1,320 @@
+---
+title: "Biostat 203B Homework 4 Solution"
+subtitle: Due Mar 19 @ 11:59PM
+author: "Liqiao (Vicky) Li"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+  # ioslides_presentation: default
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, 
+                      error = TRUE, cache.lazy = FALSE)
+```
+                      
+Display machine information:
+```{r}
+sessionInfo()
+```
+Load database libraries and the tidyverse frontend:
+```{r}
+library(tidyverse)
+library(lubridate)
+library(miceRanger)
+library(data.table)
+library(mice)
+library(splitTools)
+library(ranger)
+library(purrr)
+```
+
+## Q1. Missing data
+
+Through the Shiny app developed in HW3, we observe abundant missing values in the MIMIC-IV ICU cohort we created. In this question, we use multiple imputation to obtain a data set without missing values.
+
+0. Read following tutorials on the R package miceRanger for imputation: <https://github.com/farrellday/miceRanger>, <https://cran.r-project.org/web/packages/miceRanger/vignettes/miceAlgorithm.html>.
+
+    A more thorough book treatment of the practical imputation strategies is the book [*_Flexible Imputation of Missing Data_*](https://stefvanbuuren.name/fimd/) by Stef van Buuren. 
+
+1. Explain the jargon MCAR, MAR, and MNAR.  
+**Solution**:  
+- MCAR: Short for "missing completely at random". MCAR means the probability of being missing is the same for all data. This term can tell that the causes of the missing data are not related to the data itself. The missing data are just a random subset of the data. In this case, analysis using this type of data will not be biased but may have lower power.
+- MAR: Short for "missing at random". MAR occurs when there are systematic differences between the missing and observed data. It means the propensity for a data point to be missing is not related to the missing data but related to some of the observed data. For example, a case where we observe women are more likely 
+- MNAR:Short for "missing not at random". MNAR is data that is neither MCAR nor MAR. MNAR means that the probability of being missing varies for some unknown reasons.In other words, there is a relationship between the propensity of a value to be missing and its values. For example, people with the lowest education tend to have missing data on education but we may fail to note this.
+
+
+2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.  
+**Solution**:  
+MICE is a multiple imputation method that can deal with missing data in datasets under certain assumptions. MICE imputes the missing values through an iterative regression process for each created copy. Let's say we have three variables: A, B, and C. First, we replace the missing values in all variables with a derived value from non-missing values available for that variable (e.g., use the mean value of that variable). Second, we set back to missing the derived values for variable A only. Next, we regress A on B and C via a linear regression model. This way, A is the dependent variable and B,C are the independent variables. Lastly, we use the fitted regression model to predict the missing A values. The process is repeated for each variable that has missing data.At the end of the iterations, all the missing values in all variables will be replaced with predictions from regression models.
+
+3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.  
+**Solution**:  
+```{r}
+icu <- readRDS("icu_cohort.rds") 
+
+#modify variable "death_within_mon": NA indicates that the patient is not dead, so I replace NA with FALSE
+icu <- icu %>%
+  replace_na(list(death_within_mon = "FALSE"))
+
+missing_values <- icu %>%
+  as_tibble() %>%
+  select(everything()) %>%
+  summarise_all(funs(sum(is.na(.)))) %>% 
+  sort() %>%
+  print(width = Inf)
+```
+Variables that have >5000 `NA`s include: edregtime, edouttime, lactate, arterial_blood_pressure_mean, arterial_blood_pressure_systolic, deathtime, and dod. However, NAs for dod and deathtime are meaningful, indicating that the patient is not dead so I will keep them for now and discard the others.   
+```{r}
+#drop the unqualified variables
+icu <- icu %>%
+  as_tibble() %>%
+  select(-c("edregtime","edouttime", "lactate", 
+            "arterial_blood_pressure_mean", 
+            "arterial_blood_pressure_systolic")) 
+```
+Then I will replace the apparent data entry errors by `NA`s. I determine the outliers based on the plot observations in the Shiny app created in hw3. All observations that lie outside the common sense range are considered as potential outliers in the ICU cohort dataset. 
+
+```{r}
+#clean the icu data#
+icu <- icu %>%
+  as_tibble() %>%
+  #replace obvious outliers in vitals with NA
+  mutate(heart_rate = replace(
+    heart_rate, heart_rate< 30 |heart_rate> 250, NA)) %>%
+  mutate(
+    non_invasive_blood_pressure_systolic = replace(
+      non_invasive_blood_pressure_systolic, 
+        non_invasive_blood_pressure_systolic > 500|non_invasive_blood_pressure_systolic < 20, NA)) %>%
+  mutate(
+    non_invasive_blood_pressure_mean = 
+           replace(non_invasive_blood_pressure_mean, 
+                   non_invasive_blood_pressure_mean > 500 |non_invasive_blood_pressure_mean < 20, NA)) %>%
+  mutate(
+    respiratory_rate = replace(
+             respiratory_rate, respiratory_rate <2 | respiratory_rate > 150, NA)) %>%
+  mutate(temperature_fahrenheit = replace(
+      temperature_fahrenheit, temperature_fahrenheit <75, NA)) %>%
+  #replace obvious outliers in lab measurements with NA
+  mutate(calcium = replace(
+    calcium, calcium >20|calcium == 0, NA)) %>%
+  mutate(glucose = replace(
+    glucose, glucose >2000, NA)) %>%
+  mutate(magnesium = replace(
+    magnesium,magnesium > 10, NA)) %>%
+  mutate(wbc = replace(
+    wbc, wbc ==0 | wbc > 400, NA)) %>%
+  #drop some variables that will not be used in Q2
+  select(-c("last_careunit", "intime", "los",
+        "outtime","admittime", "dischtime", 
+        "deathtime", "admission_location", "hospital_expire_flag",
+        "discharge_location", "insurance", "dod", 
+        "anchor_year", "anchor_year_group", "age_at_adm")) %>%
+  #add a new variable age_squared
+  mutate(age_squared = anchor_age^2) %>%
+  print(width = Inf)
+```
+
+
+4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.  
+**Solution**: 
+```{r eval=F}
+#it takes 78 min to run the code below#
+system.time(
+ mice_icu <- miceRanger(
+      icu,
+      m=3,
+      returnModels = TRUE,
+      verbose=FALSE,
+      max.depth = 10
+  )
+)
+```
+
+```{r eval = F}
+#save the imputation results as a file#
+saveRDS(mice_icu, "mice_icu.rds")
+```
+5. Make imputation diagnostic plots and explain what they mean.  
+**Solution**: 
+```{r}
+#read the saved file created in Q1.4#
+mice_icu <- readRDS("mice_icu.rds")
+#Generate imputation diagnostic plots#
+#Distribution of Imputed Values#
+plotDistributions(mice_icu,vars= 'allNumeric')
+#Center and Dispersion COnvergence#
+plotVarConvergence(mice_icu,vars='allNumeric')
+#Model OOB Error#
+plotModelError(mice_icu,vars='allNumeric')
+```
+
+The red line is the density of the original data and the black lines represent the imputed data in the first distribution plot. The red lines match well with the imputed lines for most variables except for heart_rate showing more noises. Each model shows the OOB accuracy for classification and r-squared for regression. Based on the OOB Error plots, we can see that most variables do not have a good accuracy. In sum, the imputed data are not converged yet. Ideally, we need to have more iterations. However, it has already been busy for the system to run with 5 iterations. 
+
+
+6. Obtain a complete data set by averaging the 3 imputed data sets.  
+**Solution**: 
+```{r}
+dataList <- completeData(mice_icu)
+#access each dataframe in the dataList
+dataset1 <- dataList[[1]]
+dataset2 <- dataList[[2]]
+dataset3 <- dataList[[3]]
+
+#convert categorical variables to numeric matrics using model.matrix
+mod1 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset1)
+mod2 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset2)
+mod3 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset3)
+```
+```{r}
+#combine the three datasets and take average
+new_list <- list(mod1, mod2, mod3)
+ave_icu <- reduce(new_list, `+`)/length(new_list)
+```
+
+
+## Q2. Predicting 30-day mortality
+
+Develop at least two analytic approaches for predicting the 30-day mortality of patients admitted to ICU using demographic information (gender, age, marital status, ethnicity), first lab measurements during ICU stay, and first vital measurements during ICU stay. For example, you can use (1) logistic regression (`glm()` function), (2) logistic regression with lasso penalty (glmnet package), (3) random forest (randomForest package), or (4) neural network.
+
+1. Partition data into 80% training set and 20% test set. Stratify partitioning according the 30-day mortality status.
+2. Train the models using the training set.
+3. Compare model prediction performance on the test set.   
+
+**Solution**:  
+I will use logistic regression and neural network to perform the analysis.   
+
+###(1) Logistic regression 
+First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, language, first_careunit, admission_type, first lab measurements, and first vital measurements as the covariates. I will calculate the accuracy of the model to evaluate the predicted results.
+```{r}
+#convert the averaged matrix into data.frame
+icu_final1 <- as.data.frame(ave_icu)
+
+#partition data into 80% training set and 20% test set according to the 30-day mortality status
+set.seed(12345)
+inds <- partition(icu_final1$death_within_monTRUE, p =c(train = 0.8, test = 0.2))
+str(inds)
+train <- icu_final1[inds$train, ]
+test <- icu_final1[inds$test, ]
+
+#build the logistic regression model 
+logit <- glm(death_within_monTRUE ~ . - (death_within_monTRUE),
+            data = train, family = binomial)
+summary(logit)
+```
+
+
+```{r}
+#predict the 30-day mortality of ICU patients 
+pred <- predict(logit, test, type = "response")
+
+#create a dataframe of observed and predicted data
+library(yardstick)
+predicted <- round(pred)
+tab <- table(Predicted = predicted, Reference = test$death_within_monTRUE)
+tab
+
+
+#calculate the accuracy
+act_pred <- data.frame(observed = factor(test$death_within_monTRUE), predicted = 
+                      factor(predicted))
+accuracy_est <- accuracy(act_pred, observed, predicted) %>%
+  print()
+```
+The coefficient table shows that age, ethnicity`Unable to obtain` and unknown, first careunits including CCU, MICU, MICU/SICU, Medicine, Neuro SICU, SICU, and TSICU, all lab measurements, and vital measurements including heart_rate, non_invasive_blood_pressure_systolic, respiratory_rate, and temperature, have significant influence on the 30-day mortality (p-value < 0.05). The accuracy of the logistic regression model is estimated as 0.9099.
+
+###(2) Neural network
+Define a sequential model (a linear stack of layers) with 2 fully-connected hidden layers (50 and 25 neurons).
+```{r}
+library(keras)
+install_keras()
+```
+```{r}
+library(tensorflow)
+#prepare data and use the partitioned data
+x_train <- as.matrix(train[,3:49])
+y_train <- as.matrix(train[,2]) 
+
+dim(x_train)
+dim(y_train)
+ 
+x_test <- as.matrix(test[,3:49])
+y_test <- as.matrix(test[,2])
+dim(x_test)
+dim(y_test)
+```
+```{r}
+#define the model
+model <- keras_model_sequential()
+```
+```{r}
+model %>%
+  layer_dense(units = 50, activation = 'relu', input_shape = c(47)) %>%
+  layer_dropout(rate= 0.4) %>%
+  layer_dense(units = 25, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 2, activation = 'softmax')
+summary(model) 
+```
+
+
+```{r}
+#compile the model with loss function, optimizer, and metrics
+model %>% compile(
+  loss = 'sparse_categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+```
+```{r}
+#train the model
+#it takes about 28 seconds
+system.time({
+history <- model %>% fit(
+  x_train, y_train, 
+  epochs = 10, batch_size = 25, 
+  validation_split = 0.2
+)
+})
+```
+```{r}
+plot(history)
+```
+
+```{r}
+#evaluate model performance and test data
+model %>% evaluate(x_test, y_test)
+```
+
+I have tried different parameters of the model and achieved the loss of 0.29 and accuracy of 0.9076.
+
+Overall, both logistic regression and neural network models result in a good prediction accuracy that is about 0.91. The accuracy of the logistic regression model and neural network model is about the same. 
