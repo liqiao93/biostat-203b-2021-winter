@@ -25,6 +25,9 @@ library(lubridate)
 library(miceRanger)
 library(data.table)
 library(mice)
+library(splitTools)
+library(ranger)
+library(purrr)
 ```
 
 ## Q1. Missing data
@@ -148,6 +151,7 @@ The red line is the density of the original data and the black lines represent t
 ```{r}
 plotModelError(mice_icu,vars='allNumeric')
 ```
+It is not converged yet. Ideally, we need to have more iterations. However, it has already been busy for the system to run with 5 iterations. 
 
 ```{r}
 plotCorrelations(mice_icu,vars='allNumeric')
@@ -156,16 +160,49 @@ plotCorrelations(mice_icu,vars='allNumeric')
 **Solution**: 
 ```{r}
 dataList <- completeData(mice_icu)
-head(dataList[[1]],10)
+#access each dataframe in the dataList
+dataset1 <- dataList[[1]]
+dataset2 <- dataList[[2]]
+dataset3 <- dataList[[3]]
+
+#convert categorical variables to numeric matrics using model.matrix
+mod1 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset1)
+mod2 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset2)
+mod3 <- model.matrix(~ death_within_mon + anchor_age + age_squared +
+            language + marital_status + ethnicity + 
+            gender + admission_type + first_careunit + 
+            bicarbonate + calcium + chloride + creatinine+
+            glucose + magnesium + potassium + sodium + 
+            hematocrit + wbc + heart_rate + 
+            non_invasive_blood_pressure_systolic +
+            non_invasive_blood_pressure_mean + 
+            respiratory_rate + temperature_fahrenheit,
+                    data = dataset3)
 ```
-
-
 ```{r}
-ave <- rbindlist(dataList, use.names=TRUE)[,lapply(.SD, mean), by = list(
-  subject_id, hadm_id, stay_id,
-  first_careunit, admission_type, 
-  language, marital_status, ethnicity,
-  gender,death_within_mon)] 
+#combine the three datasets and take average
+new_list <- list(mod1, mod2, mod3)
+ave_icu <- reduce(new_list, `+`)/length(new_list)
+
+#ave_icu <- rbindlist(new_list, use.names=TRUE)[,lapply(.SD, mean)] 
 
 ```
 
@@ -182,18 +219,102 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 I will use logistic regression and neural network to perform the analysis.  
 
 ###(1) Logistic regression 
-First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, first lab measurements, and first vital measurements as the covariates. A root mean squared error (RMSE) is calculated to measure performance. 
+First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, language, first_careunit, admission_type, first lab measurements, and first vital measurements as the covariates. A root mean squared error (RMSE) is calculated to measure performance. Lower values of RMSE indicate better fit. 
 ```{r}
-icu1 <- ave
+#convert the averaged matrix into data.frame
+icu_final1 <- as.data.frame(ave_icu)
+
 #partition data into 80% training set and 20% test set 
-smp_size <- floor(0.80 * nrow(icu1))
-train_ind <- sample(seq_len(nrow(icu1)), size = smp_size)
-train <- icu1[train_ind, ]
-test <- icu1[-train_ind, ]
-#convert character variables into factors
+set.seed(12345)
+inds <- partition(icu_final1$death_within_monTRUE, p =c(train = 0.8, test = 0.2))
+str(inds)
+train <- icu_final1[inds$train, ]
+test <- icu_final1[inds$test, ]
+
+#build the logistic regression model 
+logit <- glm(death_within_monTRUE ~ . - (death_within_monTRUE),
+            data = train, family = binomial)
+summary(logit)
+
+#predict the 30-day mortality of ICU patients using the training set
+mortality_pre <- predict(logit, test, type = "response")
+```
+
+```{r}
+#Calculate RMSE to evaluate results
+library(Metrics)
+RMSE_result <- 
+  rmse(test$death_within_monTRUE, mortality_pre) %>%
+  print()
+
 ```
 
 
 ###(2) Neural network
+Define a sequential model (a linear stack of layers) with 2 fully-connected hidden layers (50 and 25 neurons).
+```{r}
+library(keras)
+install_keras()
+
+```
+```{r}
+library(tensorflow)
+library(reticulate)
+#install_tensorflow()
+#prepare data and use the partitioned data
+x_train <- as.matrix(train[,3:49])
+y_train <- as.matrix(train[,2]) 
+
+dim(x_train)
+dim(y_train)
+ 
+x_test <- as.matrix(test[,3:49])
+y_test <- as.matrix(test[,2])
+dim(x_test)
+dim(y_test)
+```
+```{r}
+#define the model
+model <- keras_model_sequential()
+
+model %>%
+  layer_dense(units = 50, activation = 'relu', input_shape = c(5)) %>%
+  layer_dropout(rate= 0.4) %>%
+  layer_dense(units = 25, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 2, activation = 'softmax')
+summary(model) 
+```
 
 
+```{r}
+#compile the model with loss function, optimizer, and metrics
+model %>% compile(
+  loss = 'sparse_categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+```
+```{r}
+#training and validation
+system.time({
+history <- model %>% fit(
+  x_train, y_train, 
+  epochs = 20, batch_size = 20, 
+  validation_split = 0.2
+)
+})
+```
+```{r}
+plot(history)
+```
+
+```{r eval=F}
+#evaluate model performance and test data
+model %>% evaluate(x_test, y_test)
+
+#generate predictions
+model %>% predict_classes(x_test)
+
+```
