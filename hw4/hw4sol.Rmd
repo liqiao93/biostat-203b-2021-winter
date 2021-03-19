@@ -45,11 +45,11 @@ Through the Shiny app developed in HW3, we observe abundant missing values in th
 - MNAR:Short for "missing not at random". MNAR is data that is neither MCAR nor MAR. MNAR means that the probability of being missing varies for some unknown reasons.In other words, there is a relationship between the propensity of a value to be missing and its values. For example, people with the lowest education tend to have missing data on education but we may fail to note this.
 
 
-2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.
+2. Explain in a couple of sentences how the Multiple Imputation by Chained Equations (MICE) work.  
 **Solution**:  
 MICE is a multiple imputation method that can deal with missing data in datasets under certain assumptions. MICE imputes the missing values through an iterative regression process for each created copy. Let's say we have three variables: A, B, and C. First, we replace the missing values in all variables with a derived value from non-missing values available for that variable (e.g., use the mean value of that variable). Second, we set back to missing the derived values for variable A only. Next, we regress A on B and C via a linear regression model. This way, A is the dependent variable and B,C are the independent variables. Lastly, we use the fitted regression model to predict the missing A values. The process is repeated for each variable that has missing data.At the end of the iterations, all the missing values in all variables will be replaced with predictions from regression models.
 
-3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.
+3. Perform a data quality check of the ICU stays data. Discard variables with substantial missingness, say >5000 `NA`s. Replace apparent data entry errors by `NA`s.  
 **Solution**:  
 ```{r}
 icu <- readRDS("icu_cohort.rds") 
@@ -65,7 +65,7 @@ missing_values <- icu %>%
   sort() %>%
   print(width = Inf)
 ```
-Variables that have >5000 `NA`s include: edregtime, edouttime, lactate, arterial_blood_pressure_mean, arterial_blood_pressure_systolic, deathtime, and dod. However, NAs for dod and deathtime are meaningful, indicating that the patient is not dead so I will keep them for now and discard the others.  
+Variables that have >5000 `NA`s include: edregtime, edouttime, lactate, arterial_blood_pressure_mean, arterial_blood_pressure_systolic, deathtime, and dod. However, NAs for dod and deathtime are meaningful, indicating that the patient is not dead so I will keep them for now and discard the others.   
 ```{r}
 #drop the unqualified variables
 icu <- icu %>%
@@ -117,7 +117,7 @@ icu <- icu %>%
 ```
 
 
-4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.
+4. Impute missing values by `miceRanger` (request $m=3$ datasets). This step is very computational intensive. Make sure to save the imputation results as a file.  
 **Solution**: 
 ```{r eval=F}
 #it takes 78 min to run the code below#
@@ -136,7 +136,7 @@ system.time(
 #save the imputation results as a file#
 saveRDS(mice_icu, "mice_icu.rds")
 ```
-5. Make imputation diagnostic plots and explain what they mean.
+5. Make imputation diagnostic plots and explain what they mean.  
 **Solution**: 
 ```{r}
 #read the saved file created in Q1.4#
@@ -153,7 +153,7 @@ plotModelError(mice_icu,vars='allNumeric')
 The red line is the density of the original data and the black lines represent the imputed data in the first distribution plot. The red lines match well with the imputed lines for most variables except for heart_rate showing more noises. Each model shows the OOB accuracy for classification and r-squared for regression. Based on the OOB Error plots, we can see that most variables do not have a good accuracy. In sum, the imputed data are not converged yet. Ideally, we need to have more iterations. However, it has already been busy for the system to run with 5 iterations. 
 
 
-6. Obtain a complete data set by averaging the 3 imputed data sets.
+6. Obtain a complete data set by averaging the 3 imputed data sets.  
 **Solution**: 
 ```{r}
 dataList <- completeData(mice_icu)
@@ -207,13 +207,13 @@ Develop at least two analytic approaches for predicting the 30-day mortality of 
 
 1. Partition data into 80% training set and 20% test set. Stratify partitioning according the 30-day mortality status.
 2. Train the models using the training set.
-3. Compare model prediction performance on the test set.  
+3. Compare model prediction performance on the test set.   
 
-**Solution**: 
-I will use logistic regression and neural network to perform the analysis.  
+**Solution**:  
+I will use logistic regression and neural network to perform the analysis.   
 
 ###(1) Logistic regression 
-First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, language, first_careunit, admission_type, first lab measurements, and first vital measurements as the covariates. A root mean squared error (RMSE) is calculated to measure performance. Lower values of RMSE indicate better fit. 
+First prepare the data for analysis. A logistic regression will be performed on the training set with gender, age, age_squared, marital status, ethnicity, language, first_careunit, admission_type, first lab measurements, and first vital measurements as the covariates. I will calculate the accuracy of the model to evaluate the predicted results.
 ```{r}
 #convert the averaged matrix into data.frame
 icu_final1 <- as.data.frame(ave_icu)
@@ -317,4 +317,4 @@ model %>% evaluate(x_test, y_test)
 
 I have tried different parameters of the model and achieved the loss of 0.29 and accuracy of 0.9076.
 
-Overall, both logistic regression and neural network models result in a good prediction accuracy that is about 0.91. The accuracy of the logistic regression model is only slightly higher than neural network. 
+Overall, both logistic regression and neural network models result in a good prediction accuracy that is about 0.91. The accuracy of the logistic regression model and neural network model is about the same. 
